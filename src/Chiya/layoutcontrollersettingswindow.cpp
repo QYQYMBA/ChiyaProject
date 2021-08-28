@@ -10,6 +10,8 @@
 #include "layoutcontroller.h"
 #include "adminrights.h"
 
+const int MAXNAMELENGTH = 30;
+
 LayoutControllerSettingsWindow::LayoutControllerSettingsWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LayoutControllerSettingsWindow)
@@ -63,7 +65,12 @@ void LayoutControllerSettingsWindow::setupLayoutsList()
     {
         if(_layoutsList[i] != 0)
         {
-            list << QString::fromStdString(LayoutController::hklToStr(_layoutsList[i]));
+            wchar_t name[MAXNAMELENGTH];
+            LANGID language = (LANGID)(((UINT)_layoutsList[i]) & 0x0000FFFF);
+            LCID locale = MAKELCID(language, SORT_DEFAULT);
+
+            GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
+            list << QString::fromWCharArray(name);
         }
     }
 
