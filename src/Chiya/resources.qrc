@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/IcoBackground.ico</file>
+        <file>icons/NormalIco.ico</file>
+    </qresource>
+</RCC>

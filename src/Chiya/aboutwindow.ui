@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AboutWindow</class>
+ <widget class="QDialog" name="AboutWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>352</width>
+    <height>151</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>About</string>
+  </property>
+  <widget class="QWidget" name="verticalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>351</width>
+     <height>150</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>15</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
+    </property>
+    <property name="bottomMargin">
+     <number>10</number>
+    </property>
+    <item>
+     <widget class="QLabel" name="versionLabel">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Chiya</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="license1Label">
+      <property name="text">
+       <string>Distributed under terms of the GPLv3</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="sourceCodeLabel">
+      <property name="text">
+       <string>Source code can be found &lt;a href=&quot;https://github.com/QYQYMBA/ChiyaProject&quot;&gt;here&lt;/a&gt;</string>
+      </property>
+      <property name="openExternalLinks">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="autorLabel">
+      <property name="text">
+       <string>Chiya maintained and supportet by &lt;a href=&quot;https://github.com/QYQYMBA&quot;&gt;QYQYMBA&lt;/a&gt;</string>
+      </property>
+      <property name="openExternalLinks">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="license2Label">
+      <property name="text">
+       <string>Built using Qt 6.1.2 (&lt;a href=&quot;https://www.qt.io/&quot;&gt;qt.io&lt;/a&gt;)</string>
+      </property>
+      <property name="openExternalLinks">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="qtLicense1Label">
+      <property name="text">
+       <string>The Qt Toolkit is Copyright (C) The Qt Company Ltd. </string>
+      </property>
+     </widget>
+    </item>
+    <item alignment="Qt::AlignVCenter">
+     <widget class="QLabel" name="qtLicense2Label">
+      <property name="text">
+       <string>Qt is licensed under terms of the GPLv3</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

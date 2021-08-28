@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainSettingsWindow</class>
+ <widget class="QDialog" name="MainSettingsWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>185</width>
+    <height>156</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <widget class="QCheckBox" name="autoUpdateCheckBox">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>60</y>
+     <width>300</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>If this is checked, the program will check if update is available and perform update in background. Can be used only with administrator mode</string>
+   </property>
+   <property name="text">
+    <string>Auto update</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="asAdminCheckBox">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>35</y>
+     <width>300</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>If this is checked, the programm will run as administrator</string>
+   </property>
+   <property name="text">
+    <string>Run as admin</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="startInTrayCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>85</y>
+     <width>300</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>If this is checked, the programm will start directly in tray</string>
+   </property>
+   <property name="text">
+    <string>Start in tray</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="runOnStartupCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>300</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>If this is checked, the programm will start automatically with yout windows</string>
+   </property>
+   <property name="text">
+    <string>Run on startup</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="applyButton">
+   <property name="geometry">
+    <rect>
+     <x>8</x>
+     <y>116</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Apply</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cancelButton">
+   <property name="geometry">
+    <rect>
+     <x>91</x>
+     <y>116</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Cancel</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
