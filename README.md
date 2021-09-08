@@ -9,7 +9,7 @@ You can download source code from this repository and build it with Qt. Qt versi
 
 ### Using installer
 You can also use [installer](https://github.com/QYQYMBA/ChiyaProject/releases). You can use installer to get latest release. In future auto updates will be performed using installer.
-Installer is built using Qt Installer Framework.
+Installer is created using Qt Installer Framework.
 
 ### Download .exe
 You can download latest [release](https://github.com/QYQYMBA/ChiyaProject/releases) here.
