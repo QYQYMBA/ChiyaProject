@@ -9,7 +9,6 @@
 
 #include "key.h"
 #include "qtglobalinput.h"
-#include "qtglobalinput.tpp"
 
 struct LayoutSettings
 {
