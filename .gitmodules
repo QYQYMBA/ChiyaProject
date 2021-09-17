@@ -1,0 +1,3 @@
+[submodule "src/QtGlobalInput"]
+	path = src/QtGlobalInput
+	url = https://github.com/QYQYMBA/QtGlobalInput

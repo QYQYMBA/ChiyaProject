@@ -21,8 +21,8 @@ INPUT MakeKeyInput(int vkCode, bool down)
     return ip;
 }
 
-LayoutController::LayoutController(HWND hwnd) :
-   _layoutControllerFilter(this)
+LayoutController::LayoutController(HWND hwnd)
+    :_qtGlobalInput(hwnd)
 {
     _settings.beginGroup("LayoutController");
 
@@ -36,7 +36,7 @@ LayoutController::LayoutController(HWND hwnd) :
 
     findDesktopHanlde();
 
-    QAbstractEventDispatcher::instance()->installNativeEventFilter(&_layoutControllerFilter);
+    _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
 }
 
 LayoutController::~LayoutController()

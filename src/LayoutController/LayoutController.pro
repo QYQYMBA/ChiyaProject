@@ -13,13 +13,11 @@ CONFIG += c++11
 
 SOURCES += \
     key.cpp \
-    layoutcontroller.cpp \
-    layoutcontrollerfilter.cpp
+    layoutcontroller.cpp
 
 HEADERS += \
     key.h \
-    layoutcontroller.h \
-    layoutcontrollerfilter.h
+    layoutcontroller.h
 
 LIBS += \
     -luser32 \
@@ -62,3 +60,14 @@ win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../AdminRi
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../AdminRights/debug/libAdminRights.a
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../AdminRights/release/AdminRights.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../AdminRights/debug/AdminRights.lib
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../QtGlobalInput/release/ -lQtGlobalInput
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../QtGlobalInput/debug/ -lQtGlobalInput
+
+INCLUDEPATH += $$PWD/../QtGlobalInput/src
+DEPENDPATH += $$PWD/../QtGlobalInput/src
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/release/libQtGlobalInput.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/libQtGlobalInput.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/release/QtGlobalInput.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/QtGlobalInput.lib

@@ -8,7 +8,8 @@
 #include <QSettings>
 
 #include "key.h"
-#include "layoutcontrollerfilter.h"
+#include "qtglobalinput.h"
+#include "qtglobalinput.tpp"
 
 struct LayoutSettings
 {
@@ -53,7 +54,7 @@ private:
     HWND _myHWND;
 
     QVector<LayoutSettings> _layoutsSettings;
-    LayoutControllerFilter _layoutControllerFilter;
+    QtGlobalInput _qtGlobalInput;
 
     QStringList _exceptions;
     bool _whiteList = false;
