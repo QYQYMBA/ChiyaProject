@@ -7,6 +7,7 @@
 
 #include "key.h"
 #include "adminrights.h"
+#include "winapiadapter.h"
 
 INPUT MakeKeyInput(int vkCode, bool down)
 {
@@ -68,18 +69,9 @@ BOOL EnumChildProc( HWND hwnd, LPARAM lParam )
 
 BOOL EnumAllProc( HWND hwnd, LPARAM lParam )
 {
-    WCHAR buffer[256];
-    GetClassName(hwnd, buffer, 20);
-    char ch[260];
-    char DefChar = ' ';
-    WideCharToMultiByte(CP_ACP, 0, buffer, -1, ch, 260, &DefChar, NULL);
+    QString className(WinApiAdapter::GetWindowClass(hwnd));
 
-    std::string className(ch);
-
-    GetWindowText(hwnd, buffer, 20);
-    WideCharToMultiByte(CP_ACP, 0, buffer, -1, ch, 260, &DefChar, NULL);
-
-    std::string windowName(ch);
+    QString windowName(WinApiAdapter::GetWindowName(hwnd));
 
     if(className == "SHELLDLL_DefView" && windowName == "")
     {
@@ -263,18 +255,13 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                 Sleep(1);
             }
 
+            QString windowName(WinApiAdapter::GetWindowName(newParent));
+
+            QString className(WinApiAdapter::GetWindowClass(newParent));
+
             if(!_exceptions.empty())
             {
 
-                wchar_t* l = new wchar_t[100];
-                char DefChar = ' ';
-                char ch[260];
-
-                GetWindowText(newParent, l, 100);
-
-                WideCharToMultiByte(CP_ACP, 0, l, -1, ch, 260, &DefChar, NULL);
-
-                QString windowName(ch);
 
                 if(!_whiteList)
                 {
@@ -307,6 +294,23 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                     removeSystemShortcut();
                 }
             }
+
+            if(className == "ConsoleWindowClass")
+            {
+                if(!_wasConsole)
+                {
+                    setSystemShortcut();
+                    _wasConsole = true;
+                }
+                return;
+            }
+
+            if(_wasConsole)
+            {
+                removeSystemShortcut();
+                _wasConsole = false;
+            }
+
             if(newParent == _oldParent)
             {
                 _currentLayout = GetLayout(_rightChild);

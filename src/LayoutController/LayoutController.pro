@@ -60,3 +60,14 @@ win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGloba
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/libQtGlobalInput.a
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/release/QtGlobalInput.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/QtGlobalInput.lib
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../WinApiAdapter/release/ -lWinApiAdapter
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../WinApiAdapter/debug/ -lWinApiAdapter
+
+INCLUDEPATH += $$PWD/../WinApiAdapter
+DEPENDPATH += $$PWD/../WinApiAdapter
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/release/libWinApiAdapter.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/debug/libWinApiAdapter.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/release/WinApiAdapter.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/debug/WinApiAdapter.lib
