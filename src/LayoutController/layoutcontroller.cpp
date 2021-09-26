@@ -41,6 +41,7 @@ LayoutController::LayoutController(HWND hwnd)
     _correctLayout = _currentLayout;
 
     _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
+    _qtGlobalInput.setWindowSwitch(&LayoutController::windowSwitched, this);
 }
 
 LayoutController::~LayoutController()
@@ -264,17 +265,17 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
 
             if(!_exceptions.empty())
             {
+                QString windowName(WinApiAdapter::GetWindowName(newParent));
+
                 if(!_whiteList)
                 {
                     for(int i = 0; i < _exceptions.size(); i++)
                     {
                         if(windowName.toLower().contains(_exceptions[i].toLower()))
                         {
-                            setSystemShortcut();
                             return;
                         }
                     }
-                    removeSystemShortcut();
                 }
                 else
                 {
@@ -289,10 +290,8 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                     }
                     if(!find)
                     {
-                        setSystemShortcut();
                         return;
                     }
-                    removeSystemShortcut();
                 }
             }
 
@@ -344,6 +343,45 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
             Sleep(1);
             EnumChildWindows( newParent, EnumChildProc, (LPARAM)this);
         }
+}
+
+void LayoutController::windowSwitched(HWND hwnd)
+{
+    if(!_exceptions.empty())
+    {
+        QString windowName(WinApiAdapter::GetWindowName(GetForegroundWindow()));
+
+        if(!_whiteList)
+        {
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    setSystemShortcut();
+                    return;
+                }
+            }
+            removeSystemShortcut();
+        }
+        else
+        {
+            bool find = false;
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    find = true;
+                    break;
+                }
+            }
+            if(!find)
+            {
+                setSystemShortcut();
+                return;
+            }
+            removeSystemShortcut();
+        }
+    }
 }
 
 void LayoutController::getExceptionsList()

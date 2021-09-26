@@ -33,6 +33,7 @@ public:
     bool isRunning();
 
     void handleKey(tagRAWKEYBOARD keyboard);
+    void windowSwitched(HWND hwnd);
 private:
     void loadSettings();
     void getExceptionsList();
