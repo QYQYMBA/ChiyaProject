@@ -37,6 +37,9 @@ LayoutController::LayoutController(HWND hwnd)
 
     findDesktopHanlde();
 
+    _currentLayout = GetLayout(GetForegroundWindow());
+    _correctLayout = _currentLayout;
+
     _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
 }
 
@@ -261,8 +264,6 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
 
             if(!_exceptions.empty())
             {
-
-
                 if(!_whiteList)
                 {
                     for(int i = 0; i < _exceptions.size(); i++)
@@ -297,21 +298,9 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
 
             if(className == "ConsoleWindowClass")
             {
-                if(!_wasConsole)
-                {
-                    setSystemShortcut();
-                    _wasConsole = true;
-                }
-                return;
+               _currentLayout = _correctLayout;
             }
-
-            if(_wasConsole)
-            {
-                removeSystemShortcut();
-                _wasConsole = false;
-            }
-
-            if(newParent == _oldParent)
+            else if(newParent == _oldParent)
             {
                 _currentLayout = GetLayout(_rightChild);
             }
@@ -320,6 +309,8 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                 _currentLayout = GetLayout(newParent);
             }
             _oldParent = newParent;
+
+
 
             int newLayout = 0;
             for(int i = 0; i < _layoutsSettings.size(); i++)

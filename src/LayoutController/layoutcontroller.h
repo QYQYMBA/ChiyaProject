@@ -61,7 +61,6 @@ private:
     short _toggleValue;
     bool _changeRegistry;
     bool _registryChanged = false;
-    bool _wasConsole = false;
 
     bool _running;
 
