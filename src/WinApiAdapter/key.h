@@ -5,7 +5,8 @@
 
 class Key {
     public:
-        Key(PKBDLLHOOKSTRUCT key, bool shift = false, bool caps = false, bool ctrl = false);
+        Key(PKBDLLHOOKSTRUCT key, bool shift = false, bool caps = false, bool ctrl = false, bool alt = false);
+        Key(RAWKEYBOARD key, bool shift = false, bool caps = false, bool ctrl = false, bool alt = false);
         Key();
         int vkCode, scanCode;
         bool shift, caps, ctrl, alt;

@@ -9,19 +9,6 @@
 #include "adminrights.h"
 #include "winapiadapter.h"
 
-INPUT MakeKeyInput(int vkCode, bool down)
-{
-    INPUT ip;
-    ip.type = INPUT_KEYBOARD;
-    ip.ki.wScan = 0;
-    ip.ki.time = 0;
-    ip.ki.dwExtraInfo = 0;
-
-    ip.ki.wVk = vkCode;
-    ip.ki.dwFlags = down ? 0 : KEYEVENTF_KEYUP;
-    return ip;
-}
-
 LayoutController::LayoutController(HWND hwnd)
     :_qtGlobalInput(hwnd)
 {
@@ -37,16 +24,13 @@ LayoutController::LayoutController(HWND hwnd)
 
     findDesktopHanlde();
 
-    _currentLayout = GetLayout(GetForegroundWindow());
+    _currentLayout = WinApiAdapter::GetLayoutByHwnd(GetForegroundWindow());
     _correctLayout = _currentLayout;
-
-    _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
-    _qtGlobalInput.setWindowSwitch(&LayoutController::windowSwitched, this);
 }
 
 LayoutController::~LayoutController()
 {
-
+    _settings.endGroup();
 }
 
 BOOL EnumChildProc( HWND hwnd, LPARAM lParam )
@@ -113,10 +97,8 @@ bool LayoutController::start()
         return false;
     }
 
-    if(!setupRawInputDevice())
-    {
-        return false;
-    }
+    _keyPressId = _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
+    _windowSwitchId = _qtGlobalInput.setWindowSwitch(&LayoutController::windowSwitched, this);
 
     getLayoutSettingsList();
 
@@ -134,18 +116,8 @@ bool LayoutController::stop()
     if(!_running)
         return false;
 
-    RAWINPUTDEVICE rid[1];
-
-    rid[0].usUsagePage = 0x01;
-    rid[0].usUsage = 0x06;
-    rid[0].dwFlags = RIDEV_REMOVE;
-    rid[0].hwndTarget = NULL;
-
-    if (RegisterRawInputDevices(rid, 1, sizeof(rid[0])) == FALSE)
-    {
-         qDebug() << "Raw input device registration failed!\n";
-         return false;
-    }
+    _qtGlobalInput.removeKeyPress(_keyPressId);
+    _qtGlobalInput.removeWindowSwitch(_windowSwitchId);
 
     setSystemShortcut();
 
@@ -200,7 +172,7 @@ void LayoutController::setSystemShortcut()
     _registryChanged = false;
 }
 
-void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
+void LayoutController::handleKey(RAWKEYBOARD keyboard)
 {
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
@@ -226,7 +198,7 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                 if(_layoutsSettings[i].shortcutSelect.shift == shift)
                     if(_layoutsSettings[i].shortcutSelect.alt == alt)
                     {
-                        SetKeyboardLayout(_layoutsSettings[i].layout);
+                        WinApiAdapter::SetKeyboardLayout(_layoutsSettings[i].layout);
                     }
     }
 
@@ -251,7 +223,7 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
             {
                 newParent = _desktop;
 
-                INPUT altUp = MakeKeyInput(VK_LMENU, false);
+                INPUT altUp = WinApiAdapter::MakeKeyInput(VK_LMENU, false);
                 SendInput(1, &altUp, sizeof(INPUT));
 
 
@@ -301,11 +273,11 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
             }
             else if(newParent == _oldParent)
             {
-                _currentLayout = GetLayout(_rightChild);
+                _currentLayout = WinApiAdapter::GetLayoutByHwnd(_rightChild);
             }
             else
             {
-                _currentLayout = GetLayout(newParent);
+                _currentLayout = WinApiAdapter::GetLayoutByHwnd(newParent);
             }
             _oldParent = newParent;
 
@@ -334,7 +306,7 @@ void LayoutController::handleKey(tagRAWKEYBOARD keyboard)
                 else
                 {
                     _correctLayout = _layoutsSettings[newLayout].layout;
-                    SetKeyboardLayout(_layoutsSettings[newLayout].layout);
+                    WinApiAdapter::SetKeyboardLayout(_layoutsSettings[newLayout].layout);
                     break;
                 }
             }
@@ -394,7 +366,7 @@ void LayoutController::getExceptionsList()
 void LayoutController::getLayoutSettingsList()
 {
     _layoutsSettings.clear();
-    std::vector<HKL> layoutsList = getLayoutsList();
+    std::vector<HKL> layoutsList = WinApiAdapter::getLayoutsList();
 
     for (int i = 0; i < layoutsList.size(); i++)
     {
@@ -402,7 +374,7 @@ void LayoutController::getLayoutSettingsList()
         {
             LayoutSettings ls;
 
-            QString layout = QString::fromStdString(LayoutController::hklToStr(layoutsList[i]));
+            QString layout = QString::fromStdString(WinApiAdapter::hklToStr(layoutsList[i]));
             ls.active = !_settings.value("layouts/" +layout + "/deactivated").toBool();
 
             ls.layout = layoutsList[i];
@@ -442,56 +414,4 @@ void LayoutController::getLayoutSettingsList()
             _layoutsSettings.push_back(ls);
         }
     }
-}
-
-std::string LayoutController::hklToStr(HKL hkl)
-{
-    std::stringstream s;
-    s << hkl;
-    return s.str().substr(8,8);
-}
-
-std::vector<HKL> LayoutController::getLayoutsList()
-{
-    UINT n;
-    HKL* layoutsList = NULL;
-
-    n = GetKeyboardLayoutList(0, NULL);
-    layoutsList = (HKL*)LocalAlloc(LPTR, (n * sizeof(HKL)));
-    n = GetKeyboardLayoutList(n, layoutsList);
-
-    std::vector<HKL> list;
-
-    for(uint i = 0; i < n;i++)
-    {
-        list.push_back(layoutsList[i]);
-    }
-
-    return list;
-}
-
-bool LayoutController::setupRawInputDevice()
-{
-    RAWINPUTDEVICE rid[1];
-
-    rid[0].usUsagePage = 0x01;
-    rid[0].usUsage = 0x06;
-    rid[0].dwFlags = RIDEV_INPUTSINK;
-    rid[0].hwndTarget = reinterpret_cast<HWND>(_myHWND);
-
-    if (RegisterRawInputDevices(rid, 1, sizeof(rid[0])) == FALSE)
-    {
-         qDebug() << "Raw input device registration failed!\n";
-         return false;
-    }
-
-    return true;
-}
-
-void LayoutController::SetKeyboardLayout(HKL layout) {
-    PostMessage(GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
-}
-
-HKL LayoutController::GetLayout(HWND hwnd) {
-    return GetKeyboardLayout(GetWindowThreadProcessId(hwnd, NULL));
 }

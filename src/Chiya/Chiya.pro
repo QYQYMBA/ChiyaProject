@@ -12,6 +12,7 @@ VERSION = 1.1.0
 
 SOURCES += \
     aboutwindow.cpp \
+    correctlayoutsettingswindow.cpp \
     layoutcontrollersettingswindow.cpp \
     main.cpp \
     mainsettingswindow.cpp \
@@ -19,12 +20,14 @@ SOURCES += \
 
 HEADERS += \
     aboutwindow.h \
+    correctlayoutsettingswindow.h \
     layoutcontrollersettingswindow.h \
     mainsettingswindow.h \
     mainwindow.h
 
 FORMS += \
     aboutwindow.ui \
+    correctlayoutsettingswindow.ui \
     layoutcontrollersettingswindow.ui \
     mainsettingswindow.ui \
     mainwindow.ui
@@ -106,3 +109,14 @@ win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiA
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/debug/libWinApiAdapter.a
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/release/WinApiAdapter.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../WinApiAdapter/debug/WinApiAdapter.lib
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../CorrectLayout/release/ -lCorrectLayout
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../CorrectLayout/debug/ -lCorrectLayout
+
+INCLUDEPATH += $$PWD/../CorrectLayout
+DEPENDPATH += $$PWD/../CorrectLayout
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../CorrectLayout/release/libCorrectLayout.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../CorrectLayout/debug/libCorrectLayout.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../CorrectLayout/release/CorrectLayout.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../CorrectLayout/debug/CorrectLayout.lib

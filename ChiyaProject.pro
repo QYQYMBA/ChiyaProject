@@ -3,6 +3,7 @@ TEMPLATE = subdirs
 SUBDIRS += \
   AdminRights \
   Chiya \
+  CorrectLayout \
   LayoutController \
   RunGuard \
   QtGlobalInput \
@@ -14,6 +15,7 @@ RunGuard.subdir  = src/RunGuard
 AdminRights.subdir  = src/AdminRights
 QtGlobalInput.subdir = src/QtGlobalInput
 WinApiAdapter.subdir = src/WinApiAdapter
+CorrectLayout.subdir = src/CorrectLayout
 
 LayoutController.depends = AdminRights QtGlobalInput WinApiAdapter
-Chiya.depends = LayoutController RunGuard AdminRights
+Chiya.depends = CorrectLayout LayoutController RunGuard AdminRights

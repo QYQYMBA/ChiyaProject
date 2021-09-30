@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 
 #include "layoutcontroller.h"
+#include "correctlayout.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -26,6 +27,9 @@ private slots:
     void handleLcStateButton();
     void handleLcSettingsButton();
 
+    void handleClStateButton();
+    void handleClSettingsButton();
+
     void handleActionSettingsTriggered();
 
     void handleActionHelpTriggered();
@@ -39,6 +43,7 @@ private:
     QSystemTrayIcon *_sysTrayIcon;
 
     LayoutController layoutController;
+    CorrectLayout correctLayout;
 
     bool _closing;
 

@@ -1,21 +1,36 @@
 #include "key.h"
 
 #include <string>
+#include <QDebug>
 
-Key::Key(PKBDLLHOOKSTRUCT _key, bool _shift, bool _caps, bool _ctrl) {
-    if (_key != nullptr) {
-        this->vkCode = _key->vkCode;
-        this->scanCode = _key->scanCode;
+#include "winapiadapter.h"
+
+Key::Key(PKBDLLHOOKSTRUCT key, bool shift, bool caps, bool ctrl, bool alt) {
+    if (key != nullptr) {
+        this->vkCode = key->vkCode;
+        this->scanCode = key->scanCode;
     }
     else
     {
         this->vkCode = 0;
         this->scanCode = 0;
     }
-    this->shift = _shift;
-    this->caps = _caps;
-    this->ctrl = _ctrl;
-    alt = false;
+    this->shift = shift;
+    this->caps = caps;
+    this->ctrl = ctrl;
+
+    this->alt = alt;
+}
+
+Key::Key(RAWKEYBOARD key, bool shift, bool caps, bool ctrl, bool alt) {
+    this->vkCode = key.VKey;
+    this->scanCode = key.MakeCode;
+
+    this->shift = shift;
+    this->caps = caps;
+    this->ctrl = ctrl;
+
+    this->alt = alt;
 }
 
 Key::Key()
@@ -25,7 +40,7 @@ Key::Key()
 
 char Key::toChar() {
     BYTE lpKeyState[256];
-    GetKeyboardState(lpKeyState);
+    bool success = GetKeyboardState(lpKeyState);
     lpKeyState[VK_SHIFT] = this->shift ? 129 : 0;
     lpKeyState[VK_LSHIFT] = this->shift;
     lpKeyState[VK_CAPITAL] = this->caps;
@@ -37,7 +52,7 @@ char Key::toChar() {
 
 char Key::toChar(HKL layout) {
     BYTE lpKeyState[256];
-    GetKeyboardState(lpKeyState);
+    bool success = GetKeyboardState(lpKeyState);
     lpKeyState[VK_SHIFT] = this->shift ? 129 : 0;
     lpKeyState[VK_LSHIFT] = this->shift;
     lpKeyState[VK_CAPITAL] = this->caps;
@@ -49,7 +64,7 @@ char Key::toChar(HKL layout) {
 
 bool Key::isPrintable() {
     int vkCode = this->vkCode;
-    if (vkCode == VK_MENU || vkCode == VK_SHIFT || vkCode == VK_LWIN || vkCode == VK_PAUSE) { return false; }
+    if (vkCode == VK_MENU || vkCode == VK_SHIFT || vkCode == VK_LWIN  || vkCode == VK_PAUSE) { return false; }
     if (vkCode >= 48 && vkCode <= 90) { return true; }
     if (vkCode >= 186 && vkCode <= 226) { return true; }
     if (vkCode >= 106 && vkCode <= 111) { return true; }
@@ -63,8 +78,6 @@ Key Key::CharToKey(char ch, const HKL layout)
 {
     std::string s;
     s[0] = ch;
-
-    ch = ch + 52480;
 
     SHORT keyNumber = VkKeyScanEx(ch, layout);
 

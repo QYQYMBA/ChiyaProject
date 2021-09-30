@@ -24,27 +24,21 @@ public:
     LayoutController(HWND hwnd);
     ~LayoutController();
 
-    static std::vector<HKL> getLayoutsList();
-    static std::string hklToStr(HKL hkl);
-    static void SetKeyboardLayout(HKL layout);
-
     bool start();
     bool stop();
     bool isRunning();
 
-    void handleKey(tagRAWKEYBOARD keyboard);
+    void handleKey(RAWKEYBOARD keyboard);
     void windowSwitched(HWND hwnd);
 private:
     void loadSettings();
     void getExceptionsList();
-    bool setupRawInputDevice();
     void getLayoutSettingsList();
     void findDesktopHanlde();
 
     void removeSystemShortcut();
     void setSystemShortcut();
 
-    HKL GetLayout(HWND hwnd);
     friend BOOL EnumChildProc( HWND hwnd, LPARAM lParam );
     friend BOOL EnumAllProc( HWND hwnd, LPARAM lParam );
     friend INPUT MakeKeyInput(int vkCode, bool down);
@@ -73,6 +67,9 @@ private:
 
     HWND _shell;
     HWND _desktop;
+
+    uint _keyPressId;
+    uint _windowSwitchId;
 };
 
 #endif // LAYOUTCONTROLLER_H

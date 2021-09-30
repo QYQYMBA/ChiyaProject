@@ -1,5 +1,5 @@
-#include "layoutcontrollersettingswindow.h"
-#include "ui_layoutcontrollersettingswindow.h"
+#include "correctlayoutsettingswindow.h"
+#include "ui_correctlayoutsettingswindow.h"
 
 #include <windows.h>
 #include <sstream>
@@ -7,17 +7,15 @@
 #include <QStringListModel>
 #include <QMessageBox>
 
-#include "layoutcontroller.h"
-#include "adminrights.h"
 #include "winapiadapter.h"
 
 const int MAXNAMELENGTH = 30;
 
-LayoutControllerSettingsWindow::LayoutControllerSettingsWindow(QWidget *parent)
-    : QDialog(parent)
-    , ui(new Ui::LayoutControllerSettingsWindow)
+CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::CorrectLayoutSettingsWindow)
 {
-    _settings.beginGroup("LayoutController");
+    _settings.beginGroup("CorrectLayout");
 
     _shortcutActivateKey = new Key();
     _shortcutActivateKey->vkCode = 0;
@@ -30,18 +28,18 @@ LayoutControllerSettingsWindow::LayoutControllerSettingsWindow(QWidget *parent)
 
     connect(ui->mainTabs, SIGNAL(currentChanged(int)), this, SLOT(handleTabChanged()));
 
-    connect(ui->gApplyButtonLs, SIGNAL (clicked()), this, SLOT (handleGApplyButton()));
-    connect(ui->gAutoStartCheckBoxLs, SIGNAL (clicked()), this, SLOT (handleGAutoStart()));
-    connect(ui->gChangeRegistryCheckBoxLs, SIGNAL(clicked()), this, SLOT(handleGChangeRegistry()));
+    connect(ui->gApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleGApplyButton()));
+    connect(ui->gAutoStartCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleGAutoStart()));
 
-    connect(ui->lsApplyButtonLs, SIGNAL (clicked()), this, SLOT (handleLsApplyButton()));
-    connect(ui->lsShortcutActivateButtonLs, SIGNAL (clicked()), this, SLOT (handleLsShortcutActivateButton()));
-    connect(ui->lsShortcutSelectButtonLs, SIGNAL (clicked()), this, SLOT (handleLsShortcutSelectButton()));
-    connect(ui->lsActiveCheckBoxLs, SIGNAL (clicked()), this, SLOT (handleLsActivateCheckBox()));
+    connect(ui->lsApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleLsApplyButton()));
+    connect(ui->lsShortcutActivateButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutActivateButton()));
+    connect(ui->lsShortcutSelectButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutSelectButton()));
+    connect(ui->lsActiveToCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateToCheckBox()));
+    connect(ui->lsActiveFromCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateFromCheckBox()));
 
-    connect(ui->eApplyButtonLs, SIGNAL (clicked()), this, SLOT (handleEApplyButton()));
-    connect(ui->eWhiteListCheckBoxLs, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
-    connect(ui->eExceptionsPlainTextEditLs, SIGNAL (textChanged()), this, SLOT (handleEExceptionsChanged()));
+    connect(ui->eApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleEApplyButton()));
+    connect(ui->eWhiteListCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
+    connect(ui->eExceptionsPlainTextEditCl, SIGNAL (textChanged()), this, SLOT (handleEExceptionsChanged()));
 
     setupLayoutsList();
 
@@ -50,13 +48,13 @@ LayoutControllerSettingsWindow::LayoutControllerSettingsWindow(QWidget *parent)
     loadSettings();
 }
 
-LayoutControllerSettingsWindow::~LayoutControllerSettingsWindow()
+CorrectLayoutSettingsWindow::~CorrectLayoutSettingsWindow()
 {
     _settings.endGroup();
     delete ui;
 }
 
-void LayoutControllerSettingsWindow::setupLayoutsList()
+void CorrectLayoutSettingsWindow::setupLayoutsList()
 {
     _layoutsList = WinApiAdapter::getLayoutsList();
     QStringListModel *model = new QStringListModel(this);
@@ -76,35 +74,31 @@ void LayoutControllerSettingsWindow::setupLayoutsList()
     }
 
     model->setStringList(list);
-    ui->lsLayoutsListViewLs->setModel(model);
-    ui->lsLayoutsListViewLs->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->lsLayoutsListViewCl->setModel(model);
+    ui->lsLayoutsListViewCl->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    connect(ui->lsLayoutsListViewLs->selectionModel(),
+    connect(ui->lsLayoutsListViewCl->selectionModel(),
           SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
           this, SLOT(handleLsSelectionChanged()));
 
-    ui->lsLayoutsListViewLs->setCurrentIndex(model->index(0, 0));
+    ui->lsLayoutsListViewCl->setCurrentIndex(model->index(0, 0));
 }
 
-void LayoutControllerSettingsWindow::loadSettings()
+void CorrectLayoutSettingsWindow::loadSettings()
 {
     ui->mainTabs->setCurrentIndex(0);
 
-    ui->gAutoStartCheckBoxLs->setChecked(_settings.value("runOnStart").toBool());
-    if(AdminRights::IsRunAsAdministrator())
-        ui->gChangeRegistryCheckBoxLs->setChecked(_settings.value("changeRegistry").toBool());
-    else
-        ui->gChangeRegistryCheckBoxLs->setEnabled(false);
+    ui->gAutoStartCheckBoxCl->setChecked(_settings.value("runOnStart").toBool());
 
-    ui->eExceptionsPlainTextEditLs->appendPlainText(_settings.value("exceptions/blacklist").toString());
-    ui->eWhiteListCheckBoxLs->setChecked(_settings.value("exceptions/isWhiteList").toBool());
+    ui->eExceptionsPlainTextEditCl->appendPlainText(_settings.value("exceptions/blacklist").toString());
+    ui->eWhiteListCheckBoxCl->setChecked(_settings.value("exceptions/isWhiteList").toBool());
 
     _gChanged = false;
     _lsChanged = false;
     _eChanged = false;
 }
 
-void LayoutControllerSettingsWindow::handleTabChanged()
+void CorrectLayoutSettingsWindow::handleTabChanged()
 {
     int oldTab = _tab;
     _tab = ui->mainTabs->currentIndex();
@@ -134,19 +128,19 @@ void LayoutControllerSettingsWindow::handleTabChanged()
     }
 }
 
-void LayoutControllerSettingsWindow::handleLsShortcutActivateButton()
+void CorrectLayoutSettingsWindow::handleLsShortcutActivateButton()
 {
     _shortcutSelect = false;
     _shortcutActivate = true;
 }
 
-void LayoutControllerSettingsWindow::handleLsShortcutSelectButton()
+void CorrectLayoutSettingsWindow::handleLsShortcutSelectButton()
 {
     _shortcutSelect = true;
     _shortcutActivate = false;
 }
 
-void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
+void CorrectLayoutSettingsWindow::keyPressEvent(QKeyEvent *event)
 {
     if(_shortcutActivate)
     {
@@ -157,7 +151,7 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
             _shortcutActivateKey = new Key();
             _shortcutActivateKey->vkCode = 0;
             _shortcutActivate = false;
-            ui->lsShortcutActivateLineEditLs->setText("");
+            ui->lsShortcutActivateLineEditCl->setText("");
             return;
         }
         Key* key = new Key();
@@ -180,7 +174,7 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
 
         _shortcutActivateKey = key;
 
-        ui->lsShortcutActivateLineEditLs->setText(shortcut);
+        ui->lsShortcutActivateLineEditCl->setText(shortcut);
 
         _shortcutActivate = false;
 
@@ -196,7 +190,7 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
             _shortcutSelectKey = new Key();
             _shortcutSelectKey->vkCode = 0;
             _shortcutSelect = false;
-            ui->lsShortcutSelectLineEditLs->setText("");
+            ui->lsShortcutSelectLineEditCl->setText("");
             return;
         }
         Key* key = new Key();
@@ -219,7 +213,7 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
 
         _shortcutSelectKey = key;
 
-        ui->lsShortcutSelectLineEditLs->setText(shortcut);
+        ui->lsShortcutSelectLineEditCl->setText(shortcut);
 
         _shortcutSelect = false;
 
@@ -227,24 +221,25 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
-void LayoutControllerSettingsWindow::handleLsActivateCheckBox()
+void CorrectLayoutSettingsWindow::handleLsActivateCheckBox()
 {
     _lsChanged = true;
 }
 
-void LayoutControllerSettingsWindow::handleLsApplyButton()
+void CorrectLayoutSettingsWindow::handleLsApplyButton()
 {
     if(!_lsChanged)
         return;
 
     _lsChanged = false;
 
-    QModelIndex index = ui->lsLayoutsListViewLs->currentIndex();
+    QModelIndex index = ui->lsLayoutsListViewCl->currentIndex();
     QString itemText = index.data(Qt::DisplayRole).toString();
 
-    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->checkState());
+    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxCl->checkState());
 
-    _settings.setValue("layouts/" + itemText + "/deactivated", ui->lsActiveCheckBoxLs->checkState());
+    _settings.setValue("layouts/" + itemText + "/deactivatedTo", ui->lsActiveToCheckBoxCl->checkState());
+    _settings.setValue("layouts/" + itemText + "/deactivatedFrom", ui->lsActiveFromCheckBoxCl->checkState());
 
     _settings.setValue("layouts/" + itemText + "/shortcut/activate/active", _shortcutActivateKey->vkCode != 0);
     if(_shortcutActivateKey->vkCode != 0)
@@ -267,7 +262,7 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
     }
 }
 
-void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
+void CorrectLayoutSettingsWindow::handleLsSelectionChanged(){
     if(!_lsIndexChanged)
     {
         _lsIndexChanged = true;
@@ -275,18 +270,19 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
     }
 
     if(_lsChanged)
-    {   
+    {
         if (!!unsavedChangesMessage()) {
             _lsIndexChanged = false;
-            ui->lsLayoutsListViewLs->setCurrentIndex(_index);
+            ui->lsLayoutsListViewCl->setCurrentIndex(_index);
             return;
         }
     }
 
-    _index = ui->lsLayoutsListViewLs->currentIndex();
+    _index = ui->lsLayoutsListViewCl->currentIndex();
     QString itemText = _index.data(Qt::DisplayRole).toString();
 
-    ui->lsActiveCheckBoxLs->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
+    ui->lsActiveToCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivatedTo").toBool());
+    ui->lsActiveFromCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivatedFrom").toBool());
 
     WinApiAdapter::SetKeyboardLayout(_layoutsList[_index.row()]);
 
@@ -303,11 +299,11 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
         s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/activate/vkCode").toInt(), MAPVK_VK_TO_CHAR);
         shortcut += QString::fromStdString(s);
 
-        ui->lsShortcutActivateLineEditLs->setText(shortcut);
+        ui->lsShortcutActivateLineEditCl->setText(shortcut);
    }
    else
    {
-       ui->lsShortcutActivateLineEditLs->setText("");
+       ui->lsShortcutActivateLineEditCl->setText("");
    }
 
     if(_settings.value("layouts/" + itemText + "/shortcut/select/active").toBool())
@@ -323,22 +319,22 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
         s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/select/vkCode").toInt(), MAPVK_VK_TO_CHAR);
         shortcut += QString::fromStdString(s);
 
-        ui->lsShortcutSelectLineEditLs->setText(shortcut);
+        ui->lsShortcutSelectLineEditCl->setText(shortcut);
    }
    else
    {
-       ui->lsShortcutSelectLineEditLs->setText("");
+       ui->lsShortcutSelectLineEditCl->setText("");
    }
 
     _lsChanged = false;
 }
 
-void LayoutControllerSettingsWindow::closeEvent(QCloseEvent *event) {
+void CorrectLayoutSettingsWindow::closeEvent(QCloseEvent *event) {
     if(_lsChanged)
     {
         if (!unsavedChangesMessage()) {
             _lsIndexChanged = false;
-            ui->lsLayoutsListViewLs->setCurrentIndex(_index);
+            ui->lsLayoutsListViewCl->setCurrentIndex(_index);
             event->ignore();
             return;
         }
@@ -348,26 +344,19 @@ void LayoutControllerSettingsWindow::closeEvent(QCloseEvent *event) {
     }
 }
 
-void LayoutControllerSettingsWindow::handleGApplyButton()
+void CorrectLayoutSettingsWindow::handleGApplyButton()
 {
-    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->isChecked());
-
-    _settings.setValue("changeRegistry", ui->gChangeRegistryCheckBoxLs->isChecked());
+    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxCl->isChecked());
 
     _gChanged = false;
 }
 
-void LayoutControllerSettingsWindow::handleGAutoStart()
+void CorrectLayoutSettingsWindow::handleGAutoStart()
 {
     _gChanged = true;
 }
 
-void LayoutControllerSettingsWindow::handleGChangeRegistry()
-{
-    _gChanged = true;
-}
-
-bool LayoutControllerSettingsWindow::unsavedChangesMessage()
+bool CorrectLayoutSettingsWindow::unsavedChangesMessage()
 {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, "Unsaved changes!", "You have unsaved changes! Are you sure you want to continue?",
@@ -381,20 +370,20 @@ bool LayoutControllerSettingsWindow::unsavedChangesMessage()
     return (reply == QMessageBox::Yes);
 }
 
-void LayoutControllerSettingsWindow::handleEApplyButton()
+void CorrectLayoutSettingsWindow::handleEApplyButton()
 {
-    _settings.setValue("exceptions/blacklist", ui->eExceptionsPlainTextEditLs->toPlainText());
-    _settings.setValue("exceptions/isWhiteList", ui->eWhiteListCheckBoxLs->isChecked());
+    _settings.setValue("exceptions/blacklist", ui->eExceptionsPlainTextEditCl->toPlainText());
+    _settings.setValue("exceptions/isWhiteList", ui->eWhiteListCheckBoxCl->isChecked());
 
     _eChanged = false;
 }
 
-void LayoutControllerSettingsWindow::handleEWhiteList()
+void CorrectLayoutSettingsWindow::handleEWhiteList()
 {
     _eChanged = true;
 }
 
-void LayoutControllerSettingsWindow::handleEExceptionsChanged()
+void CorrectLayoutSettingsWindow::handleEExceptionsChanged()
 {
     _eChanged = true;
 }
