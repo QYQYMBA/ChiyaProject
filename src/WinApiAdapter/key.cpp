@@ -79,7 +79,9 @@ Key Key::CharToKey(char ch, const HKL layout)
     std::string s;
     s[0] = ch;
 
-    SHORT keyNumber = VkKeyScanEx(ch, layout);
+    ch = ch + 52480;
+
+    SHORT keyNumber = VkKeyScanExA(ch, layout);
 
     if (keyNumber == -1)
     {

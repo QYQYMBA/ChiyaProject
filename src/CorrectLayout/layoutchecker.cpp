@@ -222,14 +222,14 @@ HKL LayoutChecker::identifyLayout(const std::string& word) {
 
 void LayoutChecker::changeWordLayout(std::string& word, const HKL layout)
 {
-    const std::string oldWord = word;
-    HKL currentLayout = identifyLayout(oldWord);
-    word = "";
-    for (std::string::size_type i = 0; i < oldWord.length(); i++) {
-        Key k = Key::CharToKey(oldWord[i], currentLayout);
-        word += k.toChar(layout);
-    }
-    transform(word.begin(), word.end(), word.begin(), ::tolower);
+  const std::string oldWord = word;
+  HKL currentLayout = identifyLayout(oldWord);
+  word = "";
+  for (std::string::size_type i = 0; i < oldWord.length(); i++) {
+      Key k = Key::CharToKey(oldWord[i], currentLayout);
+      word += k.toChar(layout);
+  }
+  transform(word.begin(), word.end(), word.begin(), ::tolower);
 }
 
 bool LayoutChecker::findPrefix(const std::string& word, const HKL layout) {

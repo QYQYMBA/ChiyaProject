@@ -158,7 +158,7 @@ void CorrectLayout::handleKey(RAWKEYBOARD keyboard)
                 _currentWord = "";
             }
             _lastLayout = newLayout;
-            char keyChar = key.toChar();
+            int keyChar = key.toChar();
             if (keyChar == 1) {
                 _currentWord = "";
             }
