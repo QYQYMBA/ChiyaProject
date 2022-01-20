@@ -14,12 +14,6 @@ Installer is created using Qt Installer Framework.
 ### Download .exe
 You can download latest [release](https://github.com/QYQYMBA/ChiyaProject/releases) here.
 
-# Modules
-I am planning to add more modules in future. All modules will handle different tasks but they all will be somehow connected to switching languages.
-
-### List of available modules
-1) Layout Controller - module that is supposed to switch languages insted of Windows.
-
 # Running Chiya as administrator
 Some programs might not work without Chiya beeing runned as administrator. It is recommended to run Chiya as administrator. 
 
