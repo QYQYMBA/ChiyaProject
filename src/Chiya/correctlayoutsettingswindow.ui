@@ -66,7 +66,7 @@
     <attribute name="title">
      <string>Layout Specific</string>
     </attribute>
-    <widget class="QCheckBox" name="lsActiveToCheckBoxCl">
+    <widget class="QCheckBox" name="lsActiveCheckBoxCl">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -79,7 +79,7 @@
       <string>Decides if this layout can be choosed with default language switching</string>
      </property>
      <property name="text">
-      <string>Switch to this</string>
+      <string>Skip</string>
      </property>
     </widget>
     <widget class="QLabel" name="lsShortcutSelectLabelCl">
@@ -205,22 +205,6 @@
      </property>
      <property name="toolTip">
       <string>List of keyboard layouts in your system</string>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="lsActiveFromCheckBoxCl">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>95</y>
-       <width>101</width>
-       <height>23</height>
-      </rect>
-     </property>
-     <property name="toolTip">
-      <string>Decides if this layout can be choosed with default language switching</string>
-     </property>
-     <property name="text">
-      <string>Switch from this</string>
      </property>
     </widget>
    </widget>

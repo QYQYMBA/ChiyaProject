@@ -12,12 +12,13 @@ class WinApiAdapter
 public:
     static QString GetWindowName(HWND hwnd);
     static QString GetWindowClass(HWND hwnd);
+    static QString GetWindowPath(HWND hwnd);
+    static QString GetWindowExeName(HWND hwnd);
 
     static std::vector<HKL> getLayoutsList();
     static std::string hklToStr(HKL hkl);
 
     static void SetKeyboardLayout(HKL layout);
-    static void NextKeyboardLayout();
 
     template< typename T >
     static std::string decToHex(T i);

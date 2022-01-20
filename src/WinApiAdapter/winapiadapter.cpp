@@ -1,6 +1,44 @@
 #include "winapiadapter.h"
 
+#include <QDebug>
+
 #include <sstream>
+#include "Psapi.h"
+#include "Winbase.h"
+
+QString WinApiAdapter::GetWindowPath(HWND hwnd)
+{
+    TCHAR buffer[MAX_PATH];
+    DWORD cchLen = MAX_PATH;
+    if (hwnd)
+    {
+        DWORD pid;
+        GetWindowThreadProcessId(hwnd, &pid);
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+        if (hProcess)
+        {
+            BOOL ret = QueryFullProcessImageName(hProcess, 0, buffer, &cchLen);
+
+            CloseHandle(hProcess);
+            if(!ret)
+                return "";
+        }
+    }
+
+    QString s;
+    s = s.fromWCharArray(buffer);
+    return s;
+}
+
+QString WinApiAdapter::GetWindowExeName(HWND hwnd)
+{
+    QString path = GetWindowPath(hwnd);
+    int lastSlash = path.lastIndexOf('\\');
+    QString exeName = path.mid(lastSlash + 1, path.length() - lastSlash);
+
+    qDebug() << exeName;
+    return exeName;
+}
 
 QString WinApiAdapter::GetWindowName(HWND hwnd)
 {
@@ -54,10 +92,6 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 
 void WinApiAdapter::SetKeyboardLayout(HKL layout) {
     PostMessage(GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
-}
-
-void WinApiAdapter::NextKeyboardLayout() {
-    PostMessage(GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, NULL, INPUTLANGCHANGE_FORWARD);
 }
 
 INPUT WinApiAdapter::MakeKeyInput(int vkCode, bool down)

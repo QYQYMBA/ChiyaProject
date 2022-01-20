@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionCheckForUpdates, SIGNAL (triggered()), this, SLOT (handleActionCheckForUpdates()));
     loadSettings();
     setupTrayIco();
+
+    QtGlobalInput::init((HWND)MainWindow::winId());
 }
 
 MainWindow::~MainWindow()
@@ -72,6 +74,16 @@ void MainWindow::loadSettings()
     {
         if(layoutController.start())
             ui->lcStateButton->setText("Stop");
+    }
+
+    settings.endGroup();
+
+    settings.beginGroup("CorrectLayout");
+
+    if(settings.value("runOnStart").toBool())
+    {
+        if(correctLayout.start())
+            ui->clStateButton->setText("Stop");
     }
 
     settings.endGroup();

@@ -34,8 +34,7 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     connect(ui->lsApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleLsApplyButton()));
     connect(ui->lsShortcutActivateButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutActivateButton()));
     connect(ui->lsShortcutSelectButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutSelectButton()));
-    connect(ui->lsActiveToCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateToCheckBox()));
-    connect(ui->lsActiveFromCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateFromCheckBox()));
+    connect(ui->lsActiveCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateCheckBox()));
 
     connect(ui->eApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleEApplyButton()));
     connect(ui->eWhiteListCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
@@ -234,12 +233,12 @@ void CorrectLayoutSettingsWindow::handleLsApplyButton()
     _lsChanged = false;
 
     QModelIndex index = ui->lsLayoutsListViewCl->currentIndex();
-    QString itemText = index.data(Qt::DisplayRole).toString();
+    QString itemText;
+    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
 
-    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxCl->checkState());
+    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxCl->isChecked());
 
-    _settings.setValue("layouts/" + itemText + "/deactivatedTo", ui->lsActiveToCheckBoxCl->checkState());
-    _settings.setValue("layouts/" + itemText + "/deactivatedFrom", ui->lsActiveFromCheckBoxCl->checkState());
+    _settings.setValue("layouts/" + itemText + "/deactivated", ui->lsActiveCheckBoxCl->isChecked());
 
     _settings.setValue("layouts/" + itemText + "/shortcut/activate/active", _shortcutActivateKey->vkCode != 0);
     if(_shortcutActivateKey->vkCode != 0)
@@ -279,10 +278,10 @@ void CorrectLayoutSettingsWindow::handleLsSelectionChanged(){
     }
 
     _index = ui->lsLayoutsListViewCl->currentIndex();
-    QString itemText = _index.data(Qt::DisplayRole).toString();
+    QString itemText;
+    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
 
-    ui->lsActiveToCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivatedTo").toBool());
-    ui->lsActiveFromCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivatedFrom").toBool());
+    ui->lsActiveCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
 
     WinApiAdapter::SetKeyboardLayout(_layoutsList[_index.row()]);
 

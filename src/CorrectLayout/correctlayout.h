@@ -31,11 +31,11 @@ public:
     bool init();
     bool isRunning();
 
-    void handleKey(RAWKEYBOARD keyboard);
+    void handleKey(int nCode, WPARAM wParam, LPARAM lParam);
     void handleMouse(RAWMOUSE mouse);
     void windowSwitched(HWND hwnd);
 private:
-    enum class SwitcherState {NORMAL, FULL_PAUSED, PAUSED} _state;
+    enum class SwitcherState {NORMAL, FULL_PAUSED, PAUSED, BLOCKED} _state;
 
     void loadSettings();
     void getExceptionsList();
@@ -60,14 +60,13 @@ private:
 
     LayoutChecker _layoutChecker;
 
-    QtGlobalInput _qtGlobalInput;
-
     QSettings _settings;
 
     HWND _myHWND;
 
     bool _running;
     bool _initialized;
+    bool _exception;
 };
 
 #endif // CORRECTLAYOUT_H

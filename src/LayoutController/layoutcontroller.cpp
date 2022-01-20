@@ -10,7 +10,6 @@
 #include "winapiadapter.h"
 
 LayoutController::LayoutController(HWND hwnd)
-    :_qtGlobalInput(hwnd)
 {
     _settings.beginGroup("LayoutController");
 
@@ -97,13 +96,15 @@ bool LayoutController::start()
         return false;
     }
 
-    _keyPressId = _qtGlobalInput.setKeyPress(0, QtGlobalInput::EventType::ButtonUp, &LayoutController::handleKey, this, true);
-    _windowSwitchId = _qtGlobalInput.setWindowSwitch(&LayoutController::windowSwitched, this);
+    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonUp, &LayoutController::handleKey, this, true);
+    _windowSwitchId = QtGlobalInput::setWindowSwitch(&LayoutController::windowSwitched, this);
 
     getLayoutSettingsList();
 
     loadSettings();
-    removeSystemShortcut();
+    if(_exceptions.length() == 0)
+        removeSystemShortcut();
+    windowSwitched(GetForegroundWindow()); // Simulating window switches
 
     _running = true;
 
@@ -116,8 +117,8 @@ bool LayoutController::stop()
     if(!_running)
         return false;
 
-    _qtGlobalInput.removeKeyPress(_keyPressId);
-    _qtGlobalInput.removeWindowSwitch(_windowSwitchId);
+    QtGlobalInput::removeKeyPress(_keyPressId);
+    QtGlobalInput::removeWindowSwitch(_windowSwitchId);
 
     setSystemShortcut();
 
@@ -177,9 +178,9 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
 
-    bool ctrl = GetAsyncKeyState(VK_CONTROL);
-    bool shift = GetAsyncKeyState(VK_SHIFT);
-    bool alt = GetAsyncKeyState(VK_MENU);
+    bool ctrl = GetAsyncKeyState(VK_LCONTROL);
+    bool shift = GetAsyncKeyState(VK_LSHIFT);
+    bool alt = GetAsyncKeyState(VK_LMENU);
 
     for(int i = 0; i < _layoutsSettings.size(); i++)
     {
@@ -237,13 +238,13 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
 
             if(!_exceptions.empty())
             {
-                QString windowName(WinApiAdapter::GetWindowName(newParent));
+                QString windowExeName(WinApiAdapter::GetWindowExeName(newParent));
 
                 if(!_whiteList)
                 {
                     for(int i = 0; i < _exceptions.size(); i++)
                     {
-                        if(windowName.toLower().contains(_exceptions[i].toLower()))
+                        if(windowExeName.toLower().contains(_exceptions[i].toLower()))
                         {
                             return;
                         }
@@ -254,7 +255,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
                     bool find = false;
                     for(int i = 0; i < _exceptions.size(); i++)
                     {
-                        if(windowName.toLower().contains(_exceptions[i].toLower()))
+                        if(windowExeName.toLower().contains(_exceptions[i].toLower()))
                         {
                             find = true;
                             break;
@@ -281,8 +282,6 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
             }
             _oldParent = newParent;
 
-
-
             int newLayout = 0;
             for(int i = 0; i < _layoutsSettings.size(); i++)
             {
@@ -293,6 +292,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
             }
             if(!_changeRegistry)
                 Sleep(10);
+
             for(int i = 0; i < _layoutsSettings.size(); i++)
             {
                 if(newLayout >= _layoutsSettings.size())
@@ -321,13 +321,13 @@ void LayoutController::windowSwitched(HWND hwnd)
 {
     if(!_exceptions.empty())
     {
-        QString windowName(WinApiAdapter::GetWindowName(GetForegroundWindow()));
+        QString windowExeName(WinApiAdapter::GetWindowExeName(GetForegroundWindow()));
 
         if(!_whiteList)
         {
             for(int i = 0; i < _exceptions.size(); i++)
             {
-                if(windowName.toLower().contains(_exceptions[i].toLower()))
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
                 {
                     setSystemShortcut();
                     return;
@@ -340,7 +340,7 @@ void LayoutController::windowSwitched(HWND hwnd)
             bool find = false;
             for(int i = 0; i < _exceptions.size(); i++)
             {
-                if(windowName.toLower().contains(_exceptions[i].toLower()))
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
                 {
                     find = true;
                     break;
@@ -375,7 +375,7 @@ void LayoutController::getLayoutSettingsList()
             LayoutSettings ls;
 
             QString layout = QString::fromStdString(WinApiAdapter::hklToStr(layoutsList[i]));
-            ls.active = !_settings.value("layouts/" +layout + "/deactivated").toBool();
+            ls.active = !_settings.value("layouts/" + layout + "/deactivated").toBool();
 
             ls.layout = layoutsList[i];
 

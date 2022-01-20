@@ -240,11 +240,12 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
     _lsChanged = false;
 
     QModelIndex index = ui->lsLayoutsListViewLs->currentIndex();
-    QString itemText = index.data(Qt::DisplayRole).toString();
+    QString itemText;
+    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
 
-    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->checkState());
+    _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->isChecked());
 
-    _settings.setValue("layouts/" + itemText + "/deactivated", ui->lsActiveCheckBoxLs->checkState());
+    _settings.setValue("layouts/" + itemText + "/deactivated", ui->lsActiveCheckBoxLs->isChecked());
 
     _settings.setValue("layouts/" + itemText + "/shortcut/activate/active", _shortcutActivateKey->vkCode != 0);
     if(_shortcutActivateKey->vkCode != 0)
@@ -284,7 +285,8 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
     }
 
     _index = ui->lsLayoutsListViewLs->currentIndex();
-    QString itemText = _index.data(Qt::DisplayRole).toString();
+    QString itemText;
+    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
 
     ui->lsActiveCheckBoxLs->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
 

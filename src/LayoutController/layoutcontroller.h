@@ -48,7 +48,6 @@ private:
     HWND _myHWND;
 
     QVector<LayoutSettings> _layoutsSettings;
-    QtGlobalInput _qtGlobalInput;
 
     QStringList _exceptions;
     bool _whiteList = false;

@@ -105,7 +105,7 @@
         <string>This module switches layouts just like windows do, but with more customize options</string>
        </property>
        <property name="text">
-        <string>Layout Controller</string>
+        <string>Correct Layout</string>
        </property>
       </widget>
      </item>
