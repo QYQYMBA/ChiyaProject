@@ -10,7 +10,6 @@
 #include "windows.h"
 #include "adminrights.h"
 #include "layoutcontrollersettingswindow.h"
-#include "correctlayoutsettingswindow.h"
 #include "mainsettingswindow.h"
 #include "aboutwindow.h"
 
@@ -18,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , layoutController((HWND)MainWindow::winId())
-    , correctLayout((HWND)MainWindow::winId())
     , _closing(false)
 {
     ui->setupUi(this);
@@ -26,9 +24,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->lcStateButton, SIGNAL (released()), this, SLOT (handleLcStateButton()));
     connect(ui->lcSettingsButton, SIGNAL (released()), this, SLOT (handleLcSettingsButton()));
-
-    connect(ui->clStateButton, SIGNAL (released()), this, SLOT (handleClStateButton()));
-    connect(ui->clSettingsButton, SIGNAL (released()), this, SLOT (handleClSettingsButton()));
 
     connect(ui->actionMainSettings, SIGNAL (triggered()), this, SLOT (handleActionSettingsTriggered()));
     connect(ui->actionAbout, SIGNAL (triggered()), this, SLOT (handleActionHelpTriggered()));
@@ -74,16 +69,6 @@ void MainWindow::loadSettings()
     {
         if(layoutController.start())
             ui->lcStateButton->setText("Stop");
-    }
-
-    settings.endGroup();
-
-    settings.beginGroup("CorrectLayout");
-
-    if(settings.value("runOnStart").toBool())
-    {
-        if(correctLayout.start())
-            ui->clStateButton->setText("Stop");
     }
 
     settings.endGroup();
@@ -151,31 +136,6 @@ void MainWindow::handleLcSettingsButton()
     layoutControllerSettingsWindow->setModal(true);
     layoutControllerSettingsWindow->show();
 }
-
-void MainWindow::handleClStateButton()
-{
-    if(correctLayout.isRunning())
-    {
-        if(correctLayout.stop())
-            ui->clStateButton->setText("Start");
-    }
-    else
-    {
-        if(correctLayout.start())
-            ui->clStateButton->setText("Stop");
-    }
-}
-
-void MainWindow::handleClSettingsButton()
-{
-    correctLayout.stop();
-    ui->clStateButton->setText("Start");
-
-    CorrectLayoutSettingsWindow* correctLayoutSettingsWindow = new CorrectLayoutSettingsWindow(this);
-    correctLayoutSettingsWindow->setModal(true);
-    correctLayoutSettingsWindow->show();
-}
-
 
 void MainWindow::handleActionSettingsTriggered()
 {
