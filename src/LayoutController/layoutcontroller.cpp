@@ -221,8 +221,6 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
         {
             HWND newParent = GetForegroundWindow();
 
-            qDebug() << newParent;
-
             if(newParent == _shell)
             {
                 newParent = _desktop;
