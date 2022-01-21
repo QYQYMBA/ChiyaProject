@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="general">
     <attribute name="title">
@@ -75,6 +75,81 @@
      </property>
      <property name="text">
       <string>Apply</string>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="gCurrectCombinationGroupBoxLs">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>25</y>
+       <width>171</width>
+       <height>91</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Current Combination</string>
+     </property>
+     <widget class="QRadioButton" name="gNotSetButtonLs">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>20</y>
+        <width>111</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Not Set</string>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="gCtrlShiftButtonLs">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>40</y>
+        <width>121</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>CTRL + SHIFT</string>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="gShiftAltButtonLs">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>121</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>LALT + SHIFT</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QLabel" name="gWarningLs">
+     <property name="geometry">
+      <rect>
+       <x>297</x>
+       <y>5</y>
+       <width>161</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>This will affect your System!</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::RichText</enum>
      </property>
     </widget>
    </widget>
