@@ -91,7 +91,11 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 }
 
 void WinApiAdapter::SetKeyboardLayout(HKL layout) {
-    PostMessage(GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
+    HWND owner = GetWindow(GetForegroundWindow(), GW_OWNER);
+    if(owner != NULL)
+        PostMessage(owner, WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
+    else
+        PostMessage(GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
 }
 
 INPUT WinApiAdapter::MakeKeyInput(int vkCode, bool down)
