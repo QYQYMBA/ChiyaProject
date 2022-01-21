@@ -178,9 +178,9 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
 
-    bool ctrl = GetAsyncKeyState(VK_LCONTROL);
-    bool shift = GetAsyncKeyState(VK_LSHIFT);
-    bool alt = GetAsyncKeyState(VK_LMENU);
+    bool ctrl = GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL);
+    bool shift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
+    bool alt = GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU) || GetAsyncKeyState(VK_MENU);
 
     for(int i = 0; i < _layoutsSettings.size(); i++)
     {
@@ -206,18 +206,19 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     bool lshift = (keyboard.VKey == VK_SHIFT && keyboard.MakeCode == 42);
     bool rshift = (keyboard.VKey == VK_SHIFT && keyboard.MakeCode == 54);
 
-    bool ralt = (keyboard.VKey == VK_MENU && keyboard.MakeCode == 56);
+    bool ralt = (keyboard.VKey == VK_MENU && keyboard.MakeCode == 56 && (keyboard.Flags & RI_KEY_E0));
+    bool lalt = (keyboard.VKey == VK_MENU && keyboard.MakeCode == 56 && !(keyboard.Flags & RI_KEY_E0));
 
     bool lctrl = (keyboard.VKey == VK_CONTROL && !(keyboard.Flags & RI_KEY_E0));
-    bool rctrl = (keyboard.VKey == VK_CONTROL && keyboard.Flags & RI_KEY_E0);
+    bool rctrl = (keyboard.VKey == VK_CONTROL && (keyboard.Flags & RI_KEY_E0));
 
     bool ctrlshift = (_toggleValue == 2 && (lshift || rshift || lctrl || rctrl));
-    bool shiftalt  = (_toggleValue == 1 && (lshift || rshift || ralt));
+    bool shiftalt  = (_toggleValue == 1 && (lshift || rshift || ralt || lalt));
 
-    bool secondbuttonpressed = (_toggleValue == 2 && ctrl ) || (_toggleValue == 1 && GetAsyncKeyState(VK_LMENU));
+    bool secondbuttonpressed = (_toggleValue == 2 && ctrl ) || (_toggleValue == 1 && (alt || lalt || ralt));
 
     if( ctrlshift || shiftalt )
-        if( shift &&  secondbuttonpressed )
+        if( (shift || rshift || lshift) &&  secondbuttonpressed )
         {
             HWND newParent = GetForegroundWindow();
 
