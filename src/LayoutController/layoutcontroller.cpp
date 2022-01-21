@@ -220,6 +220,9 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
         if( shift &&  secondbuttonpressed )
         {
             HWND newParent = GetForegroundWindow();
+
+            qDebug() << newParent;
+
             if(newParent == _shell)
             {
                 newParent = _desktop;
@@ -231,10 +234,6 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
                 SetForegroundWindow(_desktop);
                 Sleep(1);
             }
-
-            QString windowName(WinApiAdapter::GetWindowName(newParent));
-
-            QString className(WinApiAdapter::GetWindowClass(newParent));
 
             if(!_exceptions.empty())
             {
@@ -267,6 +266,8 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
                     }
                 }
             }
+
+            QString className(WinApiAdapter::GetWindowClass(newParent));
 
             if(className == "ConsoleWindowClass")
             {
