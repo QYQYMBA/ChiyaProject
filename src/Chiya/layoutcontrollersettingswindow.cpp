@@ -99,6 +99,14 @@ void LayoutControllerSettingsWindow::loadSettings()
     ui->eExceptionsPlainTextEditLs->appendPlainText(_settings.value("exceptions/blacklist").toString());
     ui->eWhiteListCheckBoxLs->setChecked(_settings.value("exceptions/isWhiteList").toBool());
 
+    QSettings systemSettings("HKEY_CURRENT_USER\\Keyboard Layout\\Toggle", QSettings::Registry64Format);
+    int toggleValue = systemSettings.value("Language Hotkey").toInt();
+    if(toggleValue == 1)
+        ui->gShiftAltButtonLs->setChecked(true);
+    else if (toggleValue == 2)
+        ui->gCtrlShiftButtonLs->setChecked(true);
+    else
+        ui->gNotSetButtonLs->setChecked(true);
     _gChanged = false;
     _lsChanged = false;
     _eChanged = false;
@@ -355,6 +363,17 @@ void LayoutControllerSettingsWindow::handleGApplyButton()
     _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->isChecked());
 
     _settings.setValue("changeRegistry", ui->gChangeRegistryCheckBoxLs->isChecked());
+
+    QString toggleValue;
+    if(ui->gShiftAltButtonLs->isChecked())
+        toggleValue = "1";
+    else if(ui->gCtrlShiftButtonLs->isChecked())
+        toggleValue = "2";
+    else
+        toggleValue = "3";
+
+    QSettings systemSettings("HKEY_CURRENT_USER\\Keyboard Layout\\Toggle", QSettings::Registry64Format);
+    systemSettings.setValue("Language Hotkey", toggleValue);
 
     _gChanged = false;
 }
