@@ -1,5 +1,5 @@
 # Chiya
-Is a free alternative to default windows method to switch layout. In Windows you can't temporary disable some layouts. With Chiya you can disable/enable languages you need or switch to them using hotkeys.
+Is a open source alternative to default windows way of switching keyboard layouts. In Windows you can't temporary disable some layouts. With Chiya you can disable/enable languages you need or switch to them with hotkeys.
 
 # Where to get
 You can download Chiya using installer/directly or build it from sources. 
@@ -24,6 +24,7 @@ This section will explain what different settings are doing
 2) Run as administrator - if this is checked, the programm will run as administrator
 3) Auto update - if this is checked, the program will check if update is available and perform update in background. Can be used only with administrator mode.
 4) Start in tray - if this is checked, the programm will start directly in tray
+5) Current Combination - you can select what key kombination you want to use. **This will affect key kombination in windows and not only in Chiya.**
 
 ### Layout Controller Settings
 Click on ... button to go to the Layout Controller settings
