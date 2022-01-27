@@ -8,8 +8,7 @@ You can download Chiya using installer/directly or build it from sources.
 You can download source code from this repository and build it with Qt. Qt version 6.1.2 is used.
 
 ### Using installer
-You can also use [installer](https://github.com/QYQYMBA/ChiyaProject/releases). You can use installer to get latest release. In future auto updates will be performed using installer.
-Installer is created using Qt Installer Framework.
+You can also use [installer](https://github.com/QYQYMBA/ChiyaProject/releases). You can use installer to get latest release.
 
 ### Download .exe
 You can download latest [release](https://github.com/QYQYMBA/ChiyaProject/releases) here.
@@ -20,10 +19,10 @@ Some programs might not work without Chiya beeing runned as administrator. It is
 # Settings
 This section will explain what different settings are doing
 ### General Settings
-1) Run on startup - if this is checked, the programm will start automatically with yout windows 
-2) Run as administrator - if this is checked, the programm will run as administrator
-3) Auto update - if this is checked, the program will check if update is available and perform update in background. Can be used only with administrator mode.
-4) Start in tray - if this is checked, the programm will start directly in tray
+1) Run on startup - if this is checked, the programm will start automatically with yout windows.
+2) Run as administrator - if this is checked, the programm will run as administrator.
+3) Auto update - if this is checked, the program will check if update is available and perform update in background.
+4) Start in tray - if this is checked, the programm will start directly in tray.
 5) Current Combination - you can select what key kombination you want to use. **This will affect key kombination in windows and not only in Chiya.**
 
 ### Layout Controller Settings
