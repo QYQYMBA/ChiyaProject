@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 
 #include "layoutcontroller.h"
+#include "updatedownloader.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,7 +20,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    static void updateChiya();
+    void updateChiya();
+    static UpdateDownloader *updateDownloader;
 private slots:
     void closeEvent(QCloseEvent *event) override;
 
@@ -31,17 +33,18 @@ private slots:
     void handleActionHelpTriggered();
     void handleActionCheckForUpdates();
 private:
-    bool checkUpdates(bool silent);
     void setupTrayIco();
     void loadSettings();
 
     Ui::MainWindow *ui;
     QSystemTrayIcon *_sysTrayIcon;
 
-    LayoutController layoutController;
+    LayoutController _layoutController;
 
     bool _closing;
 
     bool _runnedAsAdmin;
+
+    bool _silentUpdate;
 };
 #endif // MAINWINDOW_H

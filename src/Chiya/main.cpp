@@ -37,14 +37,11 @@ int main(int argc, char *argv[])
     for(int i = 0; i < argc; i++)
     {
         std::string arg(argv[i]);
-        if(arg == "--update" && !settings.value("updateAttempt").toBool())
+        if(arg == "--forceShow" && !settings.value("forceShow").toBool())
         {
-            settings.setValue("updateAttempt", true);
-            MainWindow::updateChiya();
+            settings.setValue("forceShow", true);
         }
     }
-
-    settings.setValue("updateAttempt", false);
 
     MainWindow w;
     return a.exec();

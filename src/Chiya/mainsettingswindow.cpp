@@ -35,11 +35,7 @@ void MainSettingsWindow::loadSettings()
 
     ui->asAdminCheckBox->setChecked(settings.value("runAsAdmin").toBool());
 
-    if(ui->asAdminCheckBox->isChecked())
-    {
-        ui->autoUpdateCheckBox->setEnabled(true);
-        ui->autoUpdateCheckBox->setChecked(settings.value("autoUpdate").toBool());
-    }
+    ui->autoUpdateCheckBox->setChecked(settings.value("autoUpdate").toBool());
 
     ui->startInTrayCheckBox->setChecked(settings.value("startInTray").toBool());
 }

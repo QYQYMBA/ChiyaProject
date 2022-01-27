@@ -6,6 +6,8 @@
 #include <QAction>
 #include <QMessageBox>
 #include <QProcess>
+#include <QtNetwork>
+#include <QtXml>
 
 #include "windows.h"
 #include "adminrights.h"
@@ -13,10 +15,12 @@
 #include "mainsettingswindow.h"
 #include "aboutwindow.h"
 
+UpdateDownloader* MainWindow::updateDownloader = new UpdateDownloader();
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , layoutController((HWND)MainWindow::winId())
+    , _layoutController((HWND)MainWindow::winId())
     , _closing(false)
 {
     ui->setupUi(this);
@@ -28,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionMainSettings, SIGNAL (triggered()), this, SLOT (handleActionSettingsTriggered()));
     connect(ui->actionAbout, SIGNAL (triggered()), this, SLOT (handleActionHelpTriggered()));
     connect(ui->actionCheckForUpdates, SIGNAL (triggered()), this, SLOT (handleActionCheckForUpdates()));
+
+    connect(updateDownloader, &UpdateDownloader::onReady, this, &MainWindow::updateChiya);
+
     loadSettings();
     setupTrayIco();
 
@@ -36,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    layoutController.stop();
+    _layoutController.stop();
 
     delete ui;
 }
@@ -55,28 +62,28 @@ void MainWindow::loadSettings()
 #endif
         }
 
-    if(_runnedAsAdmin && settings.value("autoUpdate").toBool())
+    if(settings.value("autoUpdate").toBool())
     {
-        if(checkUpdates(true))
-        {
-            updateChiya();
-        }
+        _silentUpdate = true;
+        handleActionCheckForUpdates();
     }
 
     settings.beginGroup("LayoutController");
 
     if(settings.value("runOnStart").toBool())
     {
-        if(layoutController.start())
+        if(_layoutController.start())
             ui->lcStateButton->setText("Stop");
     }
 
     settings.endGroup();
 
-    if(!settings.value("startInTray").toBool())
+    if(!settings.value("startInTray").toBool() && !settings.value("forceShow").toBool())
     {
         this->show();
     }
+
+    settings.setValue("forceShow", false);
 }
 
 void MainWindow::setupTrayIco()
@@ -115,21 +122,21 @@ void MainWindow::setupTrayIco()
 
 void MainWindow::handleLcStateButton()
 {
-    if(layoutController.isRunning())
+    if(_layoutController.isRunning())
     {
-        if(layoutController.stop())
+        if(_layoutController.stop())
             ui->lcStateButton->setText("Start");
     }
     else
     {
-        if(layoutController.start())
+        if(_layoutController.start())
             ui->lcStateButton->setText("Stop");
     }
 }
 
 void MainWindow::handleLcSettingsButton()
 {
-    layoutController.stop();
+    _layoutController.stop();
     ui->lcStateButton->setText("Start");
 
     LayoutControllerSettingsWindow* layoutControllerSettingsWindow = new LayoutControllerSettingsWindow(this);
@@ -165,69 +172,97 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     }
 }
 
-bool MainWindow::checkUpdates(bool silent)
-{
-    QProcess process;
-    QString path = "" + QCoreApplication::applicationDirPath() + "\\maintenancetool.exe";
-    path.replace("/","\\");
-    process.start(path, QStringList() << "ch");
-
-    process.waitForFinished();
-
-    if(process.error() != QProcess::UnknownError)
-    {
-        if(!silent)
-        {
-            QMessageBox info;
-            info.setText("Can't open maintenancetool. Have you installed Chiya using installer?");
-            info.exec();
-        }
-        return false;
-    }
-
-    QByteArray data = process.readAllStandardOutput();
-
-    if(data.contains("no updates available"))
-    {
-        if(!silent)
-        {
-            QMessageBox info;
-            info.setText("No updates available.");
-            info.exec();
-        }
-        return false;
-    }
-
-    return true;
+void htmlGet(const QUrl &url, const std::function<void(const QString&)> &fun) {
+   QScopedPointer<QNetworkAccessManager> manager(new QNetworkAccessManager);
+   QNetworkReply *response = manager->get(QNetworkRequest(QUrl(url)));
+   QObject::connect(response, &QNetworkReply::finished, [response, fun]{
+      response->deleteLater();
+      response->manager()->deleteLater();
+      if (response->error() != QNetworkReply::NoError) return;
+      auto const contentType =
+            response->header(QNetworkRequest::ContentTypeHeader).toString();
+      if (contentType != "application/xml") {
+         qWarning() << "Wrong file type!" << contentType;
+         return;
+      }
+      auto const html = QString::fromUtf8(response->readAll());
+      fun(html);
+   }) && manager.take();
 }
 
 void MainWindow::handleActionCheckForUpdates()
 {
-    if(!checkUpdates(false))
-        return;
+    _silentUpdate = false;
+    htmlGet({"http://repository.chiyaproject.com/Updates.xml"}, [](const QString &body){
+        QDomDocument xmlUpdates;
+        xmlUpdates.setContent(body);
+        QDomElement root = xmlUpdates.documentElement();
+        if(root.tagName() != "Updates")
+            return;
+        QDomElement component  =root.firstChild().toElement();
+        if(component.tagName() != "Version")
+            return;
+         QVersionNumber newVersion = QVersionNumber::fromString(component.firstChild().toText().data());
+         QVersionNumber currentVersion = QVersionNumber::fromString(QApplication::applicationVersion());
+         if(currentVersion >= newVersion)
+             return;
 
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Updates available!", "Do you want to perform update? Chiya will be restarted!",
-                                    QMessageBox::Yes|QMessageBox::No);
-    if(reply == QMessageBox::No)
-        return;
+         component = component.nextSibling().toElement();
+         if(component.tagName() != "URL")
+             return;
 
-    if(!_runnedAsAdmin)
-    {
-        AdminRights::ElevateNow(L"--update");
-    }
-    else
-    {
-        updateChiya();
-    }
+         qDebug() << component.firstChild().toText().data();
+
+         updateDownloader->getData(component.firstChild().toText().data());
+
+         //updateChiya();
+    });
 }
 
 void MainWindow::updateChiya()
 {
-    QString path = "" + QCoreApplication::applicationDirPath() + "\\maintenancetool.exe";
-    path.replace("/","\\");
+    QString path = "" + QCoreApplication::applicationDirPath() + "\\Update.bat";
+    QFile file(path);
+    QString exeName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
 
-    QProcess::startDetached(path, QStringList() << "up" << "--confirm-command");
+    if (file.open(QIODevice::ReadWrite)) {
+        QTextStream stream(&file);
+
+        QString delay = "";
+        delay += "ping 127.0.0.1 -n 2 > nul";
+        stream << delay << Qt::endl;
+
+        QString mkdir = "mkdir Backup";
+        stream << mkdir << Qt::endl;
+
+        QString firstCommand = "";
+        firstCommand += "move /Y \"";
+        firstCommand += QCoreApplication::applicationDirPath() + "\\"+ exeName + "\" ";
+        firstCommand += QCoreApplication::applicationDirPath() + "\\Backup\\" + exeName + "\"";
+        stream << firstCommand << Qt::endl;
+
+        QString secondCommand = "";
+        secondCommand += "ren \"";
+        secondCommand += QCoreApplication::applicationDirPath() + "\\" + "New" + exeName + "\" ";
+        secondCommand += "\"" + exeName + "\"";
+        stream << secondCommand << Qt::endl;
+
+        QString thirdCommand = "start " + exeName;
+        if(!_silentUpdate)
+            thirdCommand += " --forceShow";
+        stream << thirdCommand << Qt::endl;
+
+        QString fourthCommand = "DEL \"%~f0\"";
+        stream << fourthCommand << Qt::endl;
+
+        QProcess process;
+        process.setProgram( "cmd.exe" );
+        process.setArguments( { "/C", path } );
+        process.setWorkingDirectory( QCoreApplication::applicationDirPath() );
+        process.setStandardOutputFile( QProcess::nullDevice() );
+        process.setStandardErrorFile( QProcess::nullDevice() );
+        process.startDetached();
+    }
 
     qApp->closeAllWindows();
     exit(0);
