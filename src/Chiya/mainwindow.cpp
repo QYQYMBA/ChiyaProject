@@ -211,11 +211,10 @@ void MainWindow::handleActionCheckForUpdates()
          if(component.tagName() != "URL")
              return;
 
-         qDebug() << component.firstChild().toText().data();
+         QString url = component.firstChild().toText().data();
+         qDebug() << url;
 
-         updateDownloader->getData(component.firstChild().toText().data());
-
-         //updateChiya();
+         updateDownloader->getData(url);
     });
 }
 
