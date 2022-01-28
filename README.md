@@ -19,7 +19,7 @@ Some programs might not work without Chiya beeing runned as administrator. It is
 # Settings
 This section will explain what different settings are doing
 ### General Settings
-1) Run on startup - if this is checked, the programm will start automatically with yout windows.
+1) Run on startup - if this is checked, the programm will start on windows startup.
 2) Run as administrator - if this is checked, the programm will run as administrator.
 3) Auto update - if this is checked, the program will check if update is available and perform update in background.
 4) Start in tray - if this is checked, the programm will start directly in tray.
