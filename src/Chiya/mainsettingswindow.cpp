@@ -17,8 +17,6 @@ MainSettingsWindow::MainSettingsWindow(QWidget *parent) :
     connect(ui->cancelButton, SIGNAL (clicked()), this, SLOT (handleCancelButton()));
     connect(ui->applyButton, SIGNAL (clicked()), this, SLOT (handleApplyButton()));
 
-    connect(ui->asAdminCheckBox, SIGNAL (clicked()), this, SLOT (handleAsAdminCheckBox()));
-
     loadSettings();
 }
 
@@ -66,19 +64,6 @@ void MainSettingsWindow::handleApplyButton()
     }
 
     close();
-}
-
-void MainSettingsWindow::handleAsAdminCheckBox()
-{
-    if(ui->asAdminCheckBox->isChecked())
-    {
-        ui->autoUpdateCheckBox->setEnabled(true);
-    }
-    else
-    {
-        ui->autoUpdateCheckBox->setChecked(false);
-        ui->autoUpdateCheckBox->setEnabled(false);
-    }
 }
 
 void MainSettingsWindow::normalStartup()

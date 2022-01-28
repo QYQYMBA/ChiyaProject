@@ -6,6 +6,9 @@
 #include <QFile>
 #include <QProcess>
 #include <QMessageBox>
+#include <QFileInfo>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
 
 #include "runguard.h"
 
@@ -34,13 +37,22 @@ int main(int argc, char *argv[])
 
     QSettings settings;
 
-    for(int i = 0; i < argc; i++)
+    QCommandLineOption updated("u");
+    QCommandLineOption forceShow("f");
+
+    QCommandLineParser parser;
+    parser.addOption(updated);
+    parser.addOption(forceShow);
+    parser.process(a);
+
+    if(parser.isSet(forceShow) && !settings.value("forceShow").toBool())
     {
-        std::string arg(argv[i]);
-        if(arg == "--forceShow" && !settings.value("forceShow").toBool())
-        {
-            settings.setValue("forceShow", true);
-        }
+        settings.setValue("forceShow", true);
+    }
+    if(parser.isSet(updated))
+    {
+        QString exeName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
+        QFile::remove(QCoreApplication::applicationDirPath() + "\\" + "Old" + exeName);
     }
 
     MainWindow w;

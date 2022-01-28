@@ -15,7 +15,9 @@
 #include "mainsettingswindow.h"
 #include "aboutwindow.h"
 
-UpdateDownloader* MainWindow::updateDownloader = new UpdateDownloader();
+UpdateDownloader* MainWindow::updateDownloader;
+bool MainWindow::_silentUpdate = false;
+bool MainWindow::_showNoUpdate = false;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Window | Qt::MSWindowsFixedSizeDialogHint);
+
+    updateDownloader = new UpdateDownloader();
 
     connect(ui->lcStateButton, SIGNAL (released()), this, SLOT (handleLcStateButton()));
     connect(ui->lcSettingsButton, SIGNAL (released()), this, SLOT (handleLcSettingsButton()));
@@ -64,8 +68,17 @@ void MainWindow::loadSettings()
 
     if(settings.value("autoUpdate").toBool())
     {
-        _silentUpdate = true;
-        handleActionCheckForUpdates();
+        _showNoUpdate = true;
+        if(!settings.value("startInTray").toBool())
+        {
+            _silentUpdate = false;
+            checkUpdate();
+        }
+        else
+        {
+            _silentUpdate = true;
+            checkUpdate();
+        }
     }
 
     settings.beginGroup("LayoutController");
@@ -78,7 +91,7 @@ void MainWindow::loadSettings()
 
     settings.endGroup();
 
-    if(!settings.value("startInTray").toBool() && !settings.value("forceShow").toBool())
+    if(!settings.value("startInTray").toBool() || settings.value("forceShow").toBool())
     {
         this->show();
     }
@@ -190,9 +203,8 @@ void htmlGet(const QUrl &url, const std::function<void(const QString&)> &fun) {
    }) && manager.take();
 }
 
-void MainWindow::handleActionCheckForUpdates()
+void MainWindow::checkUpdate()
 {
-    _silentUpdate = false;
     htmlGet({"http://repository.chiyaproject.com/Updates.xml"}, [](const QString &body){
         QDomDocument xmlUpdates;
         xmlUpdates.setContent(body);
@@ -205,7 +217,14 @@ void MainWindow::handleActionCheckForUpdates()
          QVersionNumber newVersion = QVersionNumber::fromString(component.firstChild().toText().data());
          QVersionNumber currentVersion = QVersionNumber::fromString(QApplication::applicationVersion());
          if(currentVersion >= newVersion)
+         {
+             if(!MainWindow::isShowNoUpdate())
+             {
+                 QMessageBox::question(0, "No updates available!", "There is no available updates!",
+                                       QMessageBox::Ok);
+             }
              return;
+         }
 
          component = component.nextSibling().toElement();
          if(component.tagName() != "URL")
@@ -214,55 +233,57 @@ void MainWindow::handleActionCheckForUpdates()
          QString url = component.firstChild().toText().data();
          qDebug() << url;
 
-         updateDownloader->getData(url);
+         if(!MainWindow::isUpdateSilent())
+         {
+             QMessageBox::StandardButton reply;
+             reply = QMessageBox::question(0, "Updates available!", "Do you want to perform update? Chiya will be restarted!",
+                                           QMessageBox::Yes|QMessageBox::No);
+             if(reply == QMessageBox::No)
+                 return;
+         }
+
+         MainWindow::updateDownloader->getData(url, !MainWindow::isUpdateSilent());
     });
+}
+
+void MainWindow::handleActionCheckForUpdates()
+{
+    _showNoUpdate = false;
+    _silentUpdate = false;
+    checkUpdate();
 }
 
 void MainWindow::updateChiya()
 {
-    QString path = "" + QCoreApplication::applicationDirPath() + "\\Update.bat";
-    QFile file(path);
+    if(updateDownloader->isRunning())
+        return;
+
     QString exeName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
 
-    if (file.open(QIODevice::ReadWrite)) {
-        QTextStream stream(&file);
+    QString oldPath = "" + QCoreApplication::applicationDirPath() + "\\" + exeName;
+    QString newPath = "" + QCoreApplication::applicationDirPath() + "\\" + "Old" + exeName;
+    QFile::rename(oldPath, newPath);
 
-        QString delay = "";
-        delay += "ping 127.0.0.1 -n 2 > nul";
-        stream << delay << Qt::endl;
+    oldPath = "" + QCoreApplication::applicationDirPath() + "\\" + "New" +exeName;
+    newPath = "" + QCoreApplication::applicationDirPath() + "\\" + exeName;
+    QFile::rename(oldPath, newPath);
 
-        QString mkdir = "mkdir Backup";
-        stream << mkdir << Qt::endl;
-
-        QString firstCommand = "";
-        firstCommand += "move /Y \"";
-        firstCommand += QCoreApplication::applicationDirPath() + "\\"+ exeName + "\" ";
-        firstCommand += QCoreApplication::applicationDirPath() + "\\Backup\\" + exeName + "\"";
-        stream << firstCommand << Qt::endl;
-
-        QString secondCommand = "";
-        secondCommand += "ren \"";
-        secondCommand += QCoreApplication::applicationDirPath() + "\\" + "New" + exeName + "\" ";
-        secondCommand += "\"" + exeName + "\"";
-        stream << secondCommand << Qt::endl;
-
-        QString thirdCommand = "start " + exeName;
-        if(!_silentUpdate)
-            thirdCommand += " --forceShow";
-        stream << thirdCommand << Qt::endl;
-
-        QString fourthCommand = "DEL \"%~f0\"";
-        stream << fourthCommand << Qt::endl;
-
-        QProcess process;
-        process.setProgram( "cmd.exe" );
-        process.setArguments( { "/C", path } );
-        process.setWorkingDirectory( QCoreApplication::applicationDirPath() );
-        process.setStandardOutputFile( QProcess::nullDevice() );
-        process.setStandardErrorFile( QProcess::nullDevice() );
-        process.startDetached();
-    }
+    if(!_silentUpdate)
+        QProcess::startDetached(exeName, QStringList() << "-uf");
+    else
+        QProcess::startDetached(exeName, QStringList() << "-u");
 
     qApp->closeAllWindows();
     exit(0);
 }
+
+bool MainWindow::isUpdateSilent()
+{
+    return _silentUpdate;
+}
+
+bool MainWindow::isShowNoUpdate()
+{
+    return _showNoUpdate;
+}
+

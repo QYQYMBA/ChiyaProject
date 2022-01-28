@@ -21,7 +21,8 @@ public:
     ~MainWindow();
 
     void updateChiya();
-    static UpdateDownloader *updateDownloader;
+    static bool isUpdateSilent();
+    static bool isShowNoUpdate();
 private slots:
     void closeEvent(QCloseEvent *event) override;
 
@@ -35,6 +36,7 @@ private slots:
 private:
     void setupTrayIco();
     void loadSettings();
+    void checkUpdate();
 
     Ui::MainWindow *ui;
     QSystemTrayIcon *_sysTrayIcon;
@@ -45,6 +47,9 @@ private:
 
     bool _runnedAsAdmin;
 
-    bool _silentUpdate;
+    static UpdateDownloader *updateDownloader;
+
+    static bool _silentUpdate;
+    static bool _showNoUpdate;
 };
 #endif // MAINWINDOW_H

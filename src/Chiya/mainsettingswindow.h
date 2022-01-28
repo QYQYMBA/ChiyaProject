@@ -19,8 +19,6 @@ private slots:
     void handleCancelButton();
     void handleApplyButton();
 
-    void handleAsAdminCheckBox();
-
 private:
     void loadSettings();
 
