@@ -73,7 +73,7 @@ void MainSettingsWindow::normalStartup()
     QString value = QCoreApplication::applicationFilePath();
     QString apostroph = "\"";
     value.replace("/","\\");
-    value = apostroph + value + apostroph + " --autostart";
+    value = apostroph + value + apostroph + " -a";
 
     startupSettings.setValue(QCoreApplication::applicationName(), value);
 

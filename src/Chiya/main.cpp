@@ -37,12 +37,14 @@ int main(int argc, char *argv[])
 
     QSettings settings;
 
+    QCommandLineOption autostart("a");
     QCommandLineOption updated("u");
     QCommandLineOption forceShow("f");
 
     QCommandLineParser parser;
     parser.addOption(updated);
     parser.addOption(forceShow);
+    parser.addOption(autostart);
     parser.process(a);
 
     if(parser.isSet(forceShow) && !settings.value("forceShow").toBool())
