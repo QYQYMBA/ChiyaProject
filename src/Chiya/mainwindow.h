@@ -39,6 +39,7 @@ private:
     void checkUpdate();
 
     Ui::MainWindow *ui;
+    QMenu *_trayIconMenu;
     QSystemTrayIcon *_sysTrayIcon;
 
     LayoutController _layoutController;

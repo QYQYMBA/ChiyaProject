@@ -49,6 +49,8 @@ MainWindow::~MainWindow()
 {
     _layoutController.stop();
 
+    delete _sysTrayIcon;
+    delete _trayIconMenu;
     delete ui;
 }
 
@@ -108,11 +110,11 @@ void MainWindow::setupTrayIco()
         close();
     });
 
-    QMenu* trayIconMenu = new QMenu(this);
-    trayIconMenu->addAction(exitAction);
+    _trayIconMenu = new QMenu(this);
+    _trayIconMenu->addAction(exitAction);
 
     _sysTrayIcon = new QSystemTrayIcon(this);
-    _sysTrayIcon->setContextMenu(trayIconMenu);
+    _sysTrayIcon->setContextMenu(_trayIconMenu);
     _sysTrayIcon->setIcon(QIcon(":/icons/NormalIco.ico"));
     _sysTrayIcon->show();
 
