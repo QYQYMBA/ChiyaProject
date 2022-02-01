@@ -30,6 +30,7 @@ LayoutController::LayoutController(HWND hwnd)
 LayoutController::~LayoutController()
 {
     _settings.endGroup();
+    stop();
 }
 
 BOOL EnumChildProc( HWND hwnd, LPARAM lParam )
