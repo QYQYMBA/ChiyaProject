@@ -104,7 +104,8 @@ bool LayoutController::start()
     loadSettings();
     if(_exceptions.length() == 0)
         removeSystemShortcut();
-    windowSwitched(GetForegroundWindow()); // Simulating window switches
+
+    windowSwitched(GetForegroundWindow()); // Simulating window switch
 
     _running = true;
 
@@ -173,6 +174,43 @@ void LayoutController::setSystemShortcut()
     _registryChanged = false;
 }
 
+HKL LayoutController::getLayout(HWND newParent)
+{
+    QString className(WinApiAdapter::GetWindowClass(newParent));
+
+    if(className == "ConsoleWindowClass")
+    {
+        return _correctLayout;
+    }
+    else if(newParent == _oldParent)
+    {
+        return WinApiAdapter::GetLayoutByHwnd(_rightChild);
+    }
+    else
+    {
+        return WinApiAdapter::GetLayoutByHwnd(newParent);
+    }
+}
+
+HWND LayoutController::getForeground()
+{
+    HWND newParent = GetForegroundWindow();
+
+    if(newParent == _shell)
+    {
+        newParent = _desktop;
+
+        INPUT altUp = WinApiAdapter::MakeKeyInput(VK_LMENU, false);
+        SendInput(1, &altUp, sizeof(INPUT));
+
+
+        SetForegroundWindow(_desktop);
+        Sleep(1);
+    }
+
+    return newParent;
+}
+
 void LayoutController::handleKey(RAWKEYBOARD keyboard)
 {
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
@@ -219,19 +257,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if( ctrlshift || shiftalt )
         if( (shift || rshift || lshift) &&  secondbuttonpressed )
         {
-            HWND newParent = GetForegroundWindow();
-
-            if(newParent == _shell)
-            {
-                newParent = _desktop;
-
-                INPUT altUp = WinApiAdapter::MakeKeyInput(VK_LMENU, false);
-                SendInput(1, &altUp, sizeof(INPUT));
-
-
-                SetForegroundWindow(_desktop);
-                Sleep(1);
-            }
+            HWND newParent = getForeground();
 
             if(!_exceptions.empty())
             {
@@ -265,20 +291,11 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
                 }
             }
 
-            QString className(WinApiAdapter::GetWindowClass(newParent));
+            if(!_changeRegistry)
+                Sleep(10);
 
-            if(className == "ConsoleWindowClass")
-            {
-               _currentLayout = _correctLayout;
-            }
-            else if(newParent == _oldParent)
-            {
-                _currentLayout = WinApiAdapter::GetLayoutByHwnd(_rightChild);
-            }
-            else
-            {
-                _currentLayout = WinApiAdapter::GetLayoutByHwnd(newParent);
-            }
+            _currentLayout = getLayout(newParent);
+
             _oldParent = newParent;
 
             int newLayout = 0;
@@ -286,11 +303,13 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
             {
                 if(_currentLayout == _layoutsSettings[i].layout)
                 {
-                    newLayout = i + 1;
+                    if(_changeRegistry)
+                        newLayout = i + 1;
+                    else
+                        newLayout = i;
+                    break;
                 }
             }
-            if(!_changeRegistry)
-                Sleep(10);
 
             for(int i = 0; i < _layoutsSettings.size(); i++)
             {
@@ -312,7 +331,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
 
             _rightChild = newParent;
             Sleep(1);
-            EnumChildWindows( newParent, EnumChildProc, (LPARAM)this);
+            EnumChildWindows(newParent, EnumChildProc, (LPARAM)this);
         }
 }
 

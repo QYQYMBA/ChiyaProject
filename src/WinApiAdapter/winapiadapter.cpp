@@ -1,10 +1,13 @@
 #include "winapiadapter.h"
 
 #include <QDebug>
+#include <QSettings>
 
 #include <sstream>
 #include "Psapi.h"
 #include "Winbase.h"
+
+const int MAXNAMELENGTH = 30;
 
 QString WinApiAdapter::GetWindowPath(HWND hwnd)
 {
@@ -80,11 +83,48 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
     layoutsList = (HKL*)LocalAlloc(LPTR, (n * sizeof(HKL)));
     n = GetKeyboardLayoutList(n, layoutsList);
 
+    QSettings systemSettings("HKEY_CURRENT_USER\\Control Panel\\International\\User Profile", QSettings::Registry64Format);
+    QStringList order = systemSettings.value("Languages").toStringList();
+
     std::vector<HKL> list;
 
-    for(uint i = 0; i < n;i++)
+    for(int i = 0; i < order.size(); i++)
     {
-        list.push_back(layoutsList[i]);
+        for(int j = 0; j < n; j++)
+        {
+            wchar_t name[MAXNAMELENGTH];
+            LANGID language = (LANGID)(((UINT)layoutsList[j]) & 0x0000FFFF);
+            LCID locale = MAKELCID(language, SORT_DEFAULT);
+
+            GetLocaleInfo(locale, LOCALE_SNAME, name, MAXNAMELENGTH);
+
+            if(!order[i].contains('-'))
+            {
+                for(int i = 0; i < MAXNAMELENGTH; i++)
+                {
+                    if(name[i] == '-')
+                    {
+                        name[i] = '\0';
+                        break;
+                    }
+                }
+            }
+
+            if(QString::fromWCharArray(name) == order[i])
+            {
+                list.push_back(layoutsList[j]);
+                layoutsList[j] = 0;
+                break;
+            }
+        }
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        if(layoutsList[i] != 0)
+        {
+            list.push_back(layoutsList[i]);
+        }
     }
 
     return list;

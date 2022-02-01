@@ -39,6 +39,9 @@ private:
     void removeSystemShortcut();
     void setSystemShortcut();
 
+    HKL getLayout(HWND hwnd);
+    HWND getForeground();
+
     friend BOOL EnumChildProc( HWND hwnd, LPARAM lParam );
     friend BOOL EnumAllProc( HWND hwnd, LPARAM lParam );
     friend INPUT MakeKeyInput(int vkCode, bool down);
