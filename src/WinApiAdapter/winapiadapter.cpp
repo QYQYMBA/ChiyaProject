@@ -67,11 +67,12 @@ QString WinApiAdapter::GetWindowClass(HWND hwnd)
     return className;
 }
 
-std::string WinApiAdapter::hklToStr(HKL hkl)
+QString WinApiAdapter::hklToStr(HKL hkl)
 {
     std::stringstream s;
     s << hkl;
-    return s.str().substr(8,8);
+    std::string ss = s.str().substr(8,8);
+    return QString::fromStdString(ss);
 }
 
 std::vector<HKL> WinApiAdapter::getLayoutsList()

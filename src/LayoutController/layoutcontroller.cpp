@@ -393,7 +393,7 @@ void LayoutController::getLayoutSettingsList()
         {
             LayoutSettings ls;
 
-            QString layout = QString::fromStdString(WinApiAdapter::hklToStr(layoutsList[i]));
+            QString layout = WinApiAdapter::hklToStr(layoutsList[i]);
             ls.active = !_settings.value("layouts/" + layout + "/deactivated").toBool();
 
             ls.layout = layoutsList[i];

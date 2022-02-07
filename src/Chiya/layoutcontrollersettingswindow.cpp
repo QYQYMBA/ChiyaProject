@@ -249,7 +249,7 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
 
     QModelIndex index = ui->lsLayoutsListViewLs->currentIndex();
     QString itemText;
-    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
+    itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->isChecked());
 
@@ -294,7 +294,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
 
     _index = ui->lsLayoutsListViewLs->currentIndex();
     QString itemText;
-    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
+    itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     ui->lsActiveCheckBoxLs->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
 

@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 
 #include "layoutcontroller.h"
+#include "correctlayout.h"
 #include "updatedownloader.h"
 
 QT_BEGIN_NAMESPACE
@@ -29,6 +30,9 @@ private slots:
     void handleLcStateButton();
     void handleLcSettingsButton();
 
+    void handleClStateButton();
+    void handleClSettingsButton();
+
     void handleActionSettingsTriggered();
 
     void handleActionHelpTriggered();
@@ -43,6 +47,7 @@ private:
     QSystemTrayIcon *_sysTrayIcon;
 
     LayoutController _layoutController;
+    CorrectLayout _correctLayout;
 
     bool _closing;
 
