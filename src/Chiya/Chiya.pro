@@ -16,14 +16,16 @@ SOURCES += \
     layoutcontrollersettingswindow.cpp \
     main.cpp \
     mainsettingswindow.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    updatedownloader.cpp
 
 HEADERS += \
     aboutwindow.h \
     correctlayoutsettingswindow.h \
     layoutcontrollersettingswindow.h \
     mainsettingswindow.h \
-    mainwindow.h
+    mainwindow.h \
+    updatedownloader.h
 
 FORMS += \
     aboutwindow.ui \

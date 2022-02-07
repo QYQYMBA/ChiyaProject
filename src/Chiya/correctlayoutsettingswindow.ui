@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CorrectLayoutSettingsWindow</class>
+ <widget class="QDialog" name="CorrectLayoutSettingsWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>155</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QTabWidget" name="mainTabs">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>480</width>
+     <height>155</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>1</number>
+   </property>
+   <widget class="QWidget" name="general">
+    <attribute name="title">
+     <string>General</string>
+    </attribute>
+    <widget class="QCheckBox" name="gAutoStartCheckBoxCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>211</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Decides if the module will start with main program</string>
+     </property>
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Start with Chiya</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gApplyButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="layoutSpecific">
+    <attribute name="title">
+     <string>Layout Specific</string>
+    </attribute>
+    <widget class="QCheckBox" name="lsActiveCheckBoxCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>95</y>
+       <width>85</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Decides if this layout can be choosed with default language switching</string>
+     </property>
+     <property name="text">
+      <string>Skip</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="lsShortcutSelectLabelCl">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>15</y>
+       <width>165</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Switch to this keyboard layout</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="lsShortcutActivateLabelCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>15</y>
+       <width>165</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Enable keboard layout</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="lsApplyButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>262</x>
+       <y>95</y>
+       <width>83</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="lsShortcutActivateButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>65</y>
+       <width>165</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Set</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lsShortcutActivateLineEditCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>165</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Shortcut for skip/not skip this layout</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="placeholderText">
+      <string>No shortcut</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="lsShortcutSelectButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>65</y>
+       <width>165</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Set</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lsShortcutSelectLineEditCl">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>40</y>
+       <width>165</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Shortcut to direct switch to this layout</string>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="placeholderText">
+      <string>No shortcut</string>
+     </property>
+    </widget>
+    <widget class="QListView" name="lsLayoutsListViewCl">
+     <property name="geometry">
+      <rect>
+       <x>350</x>
+       <y>14</y>
+       <width>120</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>List of keyboard layouts in your system</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="exceptions">
+    <attribute name="title">
+     <string>Exceptions</string>
+    </attribute>
+    <widget class="QPlainTextEdit" name="eExceptionsPlainTextEditCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>200</width>
+       <height>110</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>List of exceptions. Exceptions are divided with space. Write here window names and not .exe</string>
+     </property>
+     <property name="plainText">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>Chiya Chrome Yurr</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="eWhiteListCheckBoxCl">
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>10</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>If this is checked, Chiya will work only in apps in list</string>
+     </property>
+     <property name="text">
+      <string>Whitelist</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="eApplyButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>35</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
