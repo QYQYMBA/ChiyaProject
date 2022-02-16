@@ -11,13 +11,13 @@ CONFIG += c++11
 
 SOURCES += \
     correctlayout.cpp \
-    keypress.cpp \
-    layoutchecker.cpp
+    layoutchecker.cpp \
+    llkeyhandler.cpp
 
 HEADERS += \
     correctlayout.h \
-    keypress.h \
-    layoutchecker.h
+    layoutchecker.h \
+    llkeyhandler.h
 
 LIBS += \
     -luser32 \
@@ -31,7 +31,8 @@ LIBS += \
     -loleaut32 \
     -luuid \
     -lodbc32 \
-    -lodbccp32
+    -lodbccp32 \
+    -lUIAutomationCore
 
 
 # Default rules for deployment.
@@ -61,3 +62,14 @@ win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGloba
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/libQtGlobalInput.a
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/release/QtGlobalInput.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../QtGlobalInput/debug/QtGlobalInput.lib
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../LayoutController/release/ -lLayoutController
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../LayoutController/debug/ -lLayoutController
+
+INCLUDEPATH += $$PWD/../LayoutController
+DEPENDPATH += $$PWD/../LayoutController
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../LayoutController/release/libLayoutController.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../LayoutController/debug/libLayoutController.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../LayoutController/release/LayoutController.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../LayoutController/debug/LayoutController.lib

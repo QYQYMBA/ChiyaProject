@@ -27,6 +27,8 @@ public:
     bool start();
     bool stop();
     bool isRunning();
+    HKL getLayout();
+    void switchLayout(HKL hkl);
 
     void handleKey(RAWKEYBOARD keyboard);
     void windowSwitched(HWND hwnd);

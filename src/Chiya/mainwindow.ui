@@ -127,6 +127,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="clStateButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="font">
         <font>
          <family>Calibri</family>

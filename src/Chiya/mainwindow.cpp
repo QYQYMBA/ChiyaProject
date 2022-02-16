@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , _layoutController((HWND)MainWindow::winId())
-    , _correctLayout((HWND)MainWindow::winId())
+    , _correctLayout((HWND)MainWindow::winId(), &_layoutController)
     , _closing(false)
 {
     ui->setupUi(this);
@@ -93,7 +93,10 @@ void MainWindow::loadSettings()
     if(settings.value("runOnStart").toBool())
     {
         if(_layoutController.start())
+        {
             ui->lcStateButton->setText("Stop");
+            ui->clStateButton->setEnabled(true);
+        }
     }
 
     settings.endGroup();
@@ -102,7 +105,7 @@ void MainWindow::loadSettings()
 
     if(settings.value("runOnStart").toBool())
     {
-        if(_correctLayout.start())
+        if(_correctLayout.startCl())
             ui->clStateButton->setText("Stop");
     }
 
@@ -155,18 +158,29 @@ void MainWindow::handleLcStateButton()
     if(_layoutController.isRunning())
     {
         if(_layoutController.stop())
+        {
+            _correctLayout.stopCl();
             ui->lcStateButton->setText("Start");
+            ui->clStateButton->setEnabled(false);
+            ui->clStateButton->setText("Start");
+        }
     }
     else
     {
         if(_layoutController.start())
+        {
             ui->lcStateButton->setText("Stop");
+            ui->clStateButton->setEnabled(true);
+        }
     }
 }
 
 void MainWindow::handleLcSettingsButton()
 {
     _layoutController.stop();
+    _correctLayout.stopCl();
+    ui->clStateButton->setEnabled(false);
+    ui->clStateButton->setText("Start");
     ui->lcStateButton->setText("Start");
 
     LayoutControllerSettingsWindow* layoutControllerSettingsWindow = new LayoutControllerSettingsWindow(this);
@@ -178,19 +192,19 @@ void MainWindow::handleClStateButton()
 {
     if(_correctLayout.isRunning())
     {
-        if(_correctLayout.stop())
+        if(_correctLayout.stopCl())
             ui->clStateButton->setText("Start");
     }
     else
     {
-        if(_correctLayout.start())
+        if(_correctLayout.startCl())
             ui->clStateButton->setText("Stop");
     }
 }
 
 void MainWindow::handleClSettingsButton()
 {
-    _correctLayout.stop();
+    _correctLayout.stopCl();
     ui->clStateButton->setText("Start");
 
     CorrectLayoutSettingsWindow* correctLayoutSettingsWindow = new CorrectLayoutSettingsWindow(this);

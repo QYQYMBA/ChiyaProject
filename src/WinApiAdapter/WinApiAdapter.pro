@@ -11,10 +11,12 @@ CONFIG += c++11
 
 SOURCES += \
     key.cpp \
+    keypress.cpp \
     winapiadapter.cpp
 
 HEADERS += \
     key.h \
+    keypress.h \
     winapiadapter.h
 
 # Default rules for deployment.

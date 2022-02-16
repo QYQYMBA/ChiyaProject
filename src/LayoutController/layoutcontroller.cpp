@@ -134,6 +134,102 @@ bool LayoutController::isRunning()
     return _running;
 }
 
+HKL LayoutController::getLayout()
+{
+    if(_running)
+        return getLayout(_oldParent);
+    else
+        return 0;
+}
+
+void LayoutController::switchLayout(HKL layout)
+{
+    HWND newParent = getForeground();
+
+    if(!_exceptions.empty())
+    {
+        QString windowExeName(WinApiAdapter::GetWindowExeName(newParent));
+
+        if(!_whiteList)
+        {
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    return;
+                }
+            }
+        }
+        else
+        {
+            bool find = false;
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    find = true;
+                    break;
+                }
+            }
+            if(!find)
+            {
+                return;
+            }
+        }
+    }
+
+    if(!_changeRegistry)
+        Sleep(10);
+
+    _currentLayout = getLayout(newParent);
+
+    _oldParent = newParent;
+
+    if(layout == 0)
+    {
+        int newLayout = 0;
+        for(int i = 0; i < _layoutsSettings.size(); i++)
+        {
+            if(_currentLayout == _layoutsSettings[i].layout)
+            {
+                if(_changeRegistry)
+                    newLayout = i + 1;
+                else
+                    newLayout = i;
+                break;
+            }
+        }
+
+        for(int i = 0; i < _layoutsSettings.size(); i++)
+        {
+            if(newLayout >= _layoutsSettings.size())
+            {
+                newLayout = 0;
+            }
+            if(!_layoutsSettings[newLayout].active)
+            {
+                newLayout++;
+            }
+            else
+            {
+                _correctLayout = _layoutsSettings[newLayout].layout;
+                WinApiAdapter::SetKeyboardLayout(_layoutsSettings[newLayout].layout);
+                break;
+            }
+        }
+
+    }
+    else
+    {
+        _correctLayout = layout;
+        WinApiAdapter::SetKeyboardLayout(layout);
+    }
+
+    _rightChild = newParent;
+    Sleep(1);
+    EnumChildWindows(newParent, EnumChildProc, (LPARAM)this);
+}
+
 void LayoutController::removeSystemShortcut()
 {
     if(_registryChanged)
@@ -214,6 +310,9 @@ HWND LayoutController::getForeground()
 
 void LayoutController::handleKey(RAWKEYBOARD keyboard)
 {
+    if(!_running)
+        return;
+
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
 
@@ -258,81 +357,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if( ctrlshift || shiftalt )
         if( (shift || rshift || lshift) &&  secondbuttonpressed )
         {
-            HWND newParent = getForeground();
-
-            if(!_exceptions.empty())
-            {
-                QString windowExeName(WinApiAdapter::GetWindowExeName(newParent));
-
-                if(!_whiteList)
-                {
-                    for(int i = 0; i < _exceptions.size(); i++)
-                    {
-                        if(windowExeName.toLower().contains(_exceptions[i].toLower()))
-                        {
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    bool find = false;
-                    for(int i = 0; i < _exceptions.size(); i++)
-                    {
-                        if(windowExeName.toLower().contains(_exceptions[i].toLower()))
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if(!find)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            if(!_changeRegistry)
-                Sleep(10);
-
-            _currentLayout = getLayout(newParent);
-
-            _oldParent = newParent;
-
-            int newLayout = 0;
-            for(int i = 0; i < _layoutsSettings.size(); i++)
-            {
-                if(_currentLayout == _layoutsSettings[i].layout)
-                {
-                    if(_changeRegistry)
-                        newLayout = i + 1;
-                    else
-                        newLayout = i;
-                    break;
-                }
-            }
-
-            for(int i = 0; i < _layoutsSettings.size(); i++)
-            {
-                if(newLayout >= _layoutsSettings.size())
-                {
-                    newLayout = 0;
-                }
-                if(!_layoutsSettings[newLayout].active)
-                {
-                    newLayout++;
-                }
-                else
-                {
-                    _correctLayout = _layoutsSettings[newLayout].layout;
-                    WinApiAdapter::SetKeyboardLayout(_layoutsSettings[newLayout].layout);
-                    break;
-                }
-            }
-
-            _rightChild = newParent;
-            Sleep(1);
-            EnumChildWindows(newParent, EnumChildProc, (LPARAM)this);
+            switchLayout(0);
         }
 }
 

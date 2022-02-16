@@ -19,3 +19,4 @@ CorrectLayout.subdir = src/CorrectLayout
 
 LayoutController.depends = AdminRights QtGlobalInput WinApiAdapter
 Chiya.depends = CorrectLayout LayoutController RunGuard AdminRights
+CorrectLayout.depends = QtGlobalInput WinApiAdapter LayoutController

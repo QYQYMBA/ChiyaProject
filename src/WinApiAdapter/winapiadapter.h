@@ -2,10 +2,13 @@
 #define WINAPIADAPTER_H
 
 #include <QString>
+#include <QVector>
 
 #include <windows.h>
 #include <sstream>
 #include <iomanip>
+
+#include "keypress.h"
 
 class WinApiAdapter
 {
@@ -29,6 +32,8 @@ public:
     static HKL GetLayout();
 
     static void SendKeyPress(int vkCode, bool shift = false, bool ctrl = false, bool alt = false);
+    static void SendKeyPress(KeyPress kp);
+    static void SendKeyPresses(QVector<KeyPress> keyPresses);
 private:
     WinApiAdapter();
 };

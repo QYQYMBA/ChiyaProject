@@ -9,17 +9,21 @@
 
 #include "winapiadapter.h"
 
-#include <QtConcurrent/QtConcurrent>
-
 const int MAXNAMELENGTH = 30;
 
-CorrectLayout::CorrectLayout(HWND hwnd)
-    :_layoutChecker()
+CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
+    : _llKeyHandler(),
+      timer(),
+      _layoutChecker(),
+      _queueMutex()
 {
     _settings.beginGroup("CorrectLayout");
 
     _running = false;
     _initialized = false;
+
+    _layoutController = layoutController;
+    _currentElement = NULL;
 
     _myHWND = hwnd;
 }
@@ -29,9 +33,12 @@ CorrectLayout::~CorrectLayout()
     _settings.endGroup();
 }
 
-bool CorrectLayout::start()
+bool CorrectLayout::startCl()
 {
     if(_running)
+        return false;
+
+    if(!_layoutController->isRunning())
         return false;
 
     qDebug() << "Starting CorrectLayout";
@@ -45,12 +52,7 @@ bool CorrectLayout::start()
             return false;
     }
 
-    _currentElement = NULL;
-    _lastLayout = NULL;
-
-    _keyPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleKey, this, false);
-    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
-    _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
+    _lastLayout = _layoutController->getLayout();
 
     getLayoutSettingsList();
 
@@ -64,14 +66,10 @@ bool CorrectLayout::start()
 }
 
 
-bool CorrectLayout::stop()
+bool CorrectLayout::stopCl()
 {
     if(!_running)
         return false;
-
-    QtGlobalInput::removeKeyPress(_keyPressId);
-    QtGlobalInput::removeMousePress(_mousePressId);
-    QtGlobalInput::removeWindowSwitch(_windowSwitchId);
 
     _running = false;
 
@@ -98,11 +96,19 @@ bool CorrectLayout::init()
                                   (void**)&_automation);
 
     if(FAILED(hr))
-        return "Automation can not be initialized";
+        qDebug() << "Automation can not be initialized";
+
+    //fceh = new FocusChangedEventHandler(this, _automation);
+    //_automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)fceh);
 
     qDebug() << "Start loading dictionaries";
 
     std::vector<HKL> layoutsList = WinApiAdapter::getLayoutsList();
+
+    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonDown, &CorrectLayout::handleKey, this, true);
+     _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
+    _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
 
     for (int i = 0; i < layoutsList.size(); i++)
     {
@@ -112,16 +118,18 @@ bool CorrectLayout::init()
 
         GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
 
-        qDebug() << "Log: Start loading " << QString::fromWCharArray(name) << " dictionary";
+        qDebug() << "Start loading " << QString::fromWCharArray(name) << " dictionary";
 
         QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(layoutsList[i]) + ".txt";
         _layoutChecker.load(path, layoutsList[i]);
-        qDebug() << "Log: Finish loading " << QString::fromWCharArray(name) << " dictionary";
+        qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
     }
 
     qDebug() << "Finish loading dictionaries";
 
     _initialized = true;
+
+    connect(this, &CorrectLayout::finished, this, &CorrectLayout::onKeyProcessed);
 
     qDebug() << "Initialization finished successfully";
 
@@ -133,183 +141,29 @@ bool CorrectLayout::isRunning()
     return _running;
 }
 
-void CorrectLayout::handleKey(int nCode, WPARAM wParam, LPARAM lParam)
+void CorrectLayout::handleKey(RAWKEYBOARD rk)
 {
-    if (!GetAsyncKeyState(VK_LSHIFT) && !GetAsyncKeyState(VK_RSHIFT))
+    if(_state == SwitcherState::CHANGING)
     {
-        INPUT input = WinApiAdapter::MakeKeyInput(VK_SHIFT, false);
-        SendInput(1, &input, sizeof(INPUT));
-    }
-
-    if (_state == SwitcherState::CHANGING)
         return;
+    }
 
     bool ctrl = GetAsyncKeyState(VK_CONTROL);
     bool shift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
     bool alt = GetAsyncKeyState(VK_MENU);
 
-    PKBDLLHOOKSTRUCT keyboard = (PKBDLLHOOKSTRUCT)lParam;
-    KeyPress keyPress(keyboard, shift, true, ctrl, alt, WinApiAdapter::GetLayout());
+    KeyPress keyPress(rk, shift, true, ctrl, alt, _layoutController->getLayout());
 
-    if(_exception)
-        return;
+    addKeyToQueue(keyPress);
+}
 
-    if(!_exceptions.empty())
-    {
-        QString windowExeName(WinApiAdapter::GetWindowExeName(GetForegroundWindow()));
-
-        if(!_whiteList)
-        {
-            for(int i = 0; i < _exceptions.size(); i++)
-            {
-                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
-                {
-                    return;
-                }
-            }
-        }
-        else
-        {
-            bool find = false;
-            for(int i = 0; i < _exceptions.size(); i++)
-            {
-                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
-                {
-                    find = true;
-                    break;
-                }
-            }
-            if(!find)
-            {
-                return;
-            }
-        }
-    }
-
-    IUIAutomationElement* newElement = getFocusedElement();
-    if(!compareElements(_currentElement, newElement))
-    {
-        _currentText = "";
-        _currentElement = newElement;
-        _state = SwitcherState::SEARCHING;
-        _keyPresses.clear();
-        if(keyPress.isPrintable())
-            _keyPresses.push_back(keyPress);
-        _currentText = getElementText(_currentElement);
-    }
-
-    if(keyPress.getVkCode() == VK_SPACE || keyPress.getVkCode() == VK_RETURN)
-    {
-        checkLayout(false, true);
-        _currentText = "";
-        _state = SwitcherState::SEARCHING;
-        _keyPresses.clear();
-        _currentText = getElementText(_currentElement);
-    }
-
-    if(WinApiAdapter::GetLayout() != _lastLayout && _lastLayout != NULL)
-    {
-        _state = SwitcherState::PAUSED;
-        _lastLayout = WinApiAdapter::GetLayout();
-    }
-
-    _currentText = _currentText.replace('\n', ' ').replace('\r', ' ');
-
-    if(_state == SwitcherState::PAUSED)
-        return;
-
-    if(_keyPresses.size() == 0 || !keyPress.isPrintable())
-    {
-        _keyPresses.push_back(keyPress);
-        return;
-    }
-
-    if(keyPress.getVkCode() == VK_BACK)
-    {
-        _keyPresses.pop_back();
-        _currentText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');;
-        return;
-    }
-
-    if(_layoutChecker.isKeyInDictionary(keyPress.getVkCode()))
-    {
-        QString newText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');
-        QStringList oldWords = _currentText.split(' ');
-        QStringList newWords = newText.split(' ');
-        QStringList changedWords;
-        if(newWords.size() == oldWords.size())
-        {
-            for(int i = 0; i < newWords.size(); i++)
-            {
-                if(newWords[i] != oldWords[i])
-                {
-                    changedWords.push_back(oldWords[i]);
-                    changedWords.push_back(newWords[i]);
-                }
-            }
-            if(changedWords.size() != 2)
-            {
-                _state = SwitcherState::SEARCHING;
-            }
-            else
-            {
-                if(_state == SwitcherState::SEARCHING)
-                {
-                    QString oldWord = changedWords[0];
-                    QString newWord = changedWords[1];
-                    for(int i = 0; i < oldWord.size() + 1; i++)
-                    {
-                        QString variant = oldWord;
-
-                        variant.insert(i, _keyPresses.back().toChar());
-
-                        if(variant == newWord && i == newWord.size() - 1)
-                        {
-                            _position = i + 1;
-                            _state = SwitcherState::WORKING;
-                        }
-                    }
-                }
-                else if(_state == SwitcherState::WORKING)
-                {
-                    QString oldWord = changedWords[0];
-                    oldWord.insert(_position, _keyPresses.back().toChar());
-                    oldWord = oldWord.toLower();
-                    QString newWord = changedWords[1].toLower();
-                    if(newWord == oldWord)
-                    {
-                        _position++;
-
-                        _currentWord = newWord + keyPress.toChar();
-                        if (_currentWord.length() > 2) {
-                            bool needShift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
-                            checkLayout(true, false);
-                            if (needShift == true)
-                            {
-                                INPUT input = WinApiAdapter::MakeKeyInput(VK_SHIFT, true);
-                                SendInput(1, &input, sizeof(INPUT));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _state = SwitcherState::SEARCHING;
-                    }
-                }
-            }
-        }
-        else
-        {
-            _state = SwitcherState::SEARCHING;
-        }
-
-        _currentText = newText;
-        _keyPresses.push_back(keyPress);
-    }
-    else
-    {
-        _state = SwitcherState::PAUSED;
-    }
+bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    _llKeyHandler.passArguments(nCode, wParam, lParam);
+    _llKeyHandler.start();
+    QDeadlineTimer dt(5);
+    _llKeyHandler.wait(dt);
+    return _llKeyHandler.getReslut();
 }
 
 void CorrectLayout::handleMouse(RAWMOUSE mouse)
@@ -324,8 +178,6 @@ void CorrectLayout::windowSwitched(HWND hwnd)
     if(!_exceptions.empty())
     {
         QString windowExeName(WinApiAdapter::GetWindowExeName(GetForegroundWindow()));
-
-        qDebug() << windowExeName;
 
         if(!_whiteList)
         {
@@ -358,6 +210,10 @@ void CorrectLayout::windowSwitched(HWND hwnd)
             _exception = false;
         }
     }
+    else
+    {
+        _exception = false;
+    }
 }
 
 void CorrectLayout::loadSettings()
@@ -366,6 +222,7 @@ void CorrectLayout::loadSettings()
 
     qDebug() << "Whitelist mode:" << (_whiteList ? "True" : "False");
 
+    _exception = false;
     getExceptionsList();
 }
 
@@ -437,42 +294,46 @@ void CorrectLayout::convertCurrentWord(HKL layout)
     if (word.size() == 0)
         return;
 
-    _state = SwitcherState::CHANGING;
-
-    WinApiAdapter::SendKeyPress(VK_BACK, false, true, false);
-
     std::queue<KeyPress> keys;
-    for(int i =  _keyPresses.size() - _currentWord.size(); i < _keyPresses.size(); i++)
-    {
-        keys.push(_keyPresses[i]);
-    }
+    if(_keyPresses.size() > _currentWord.size())
+        for(int i = _keyPresses.size() - _currentWord.size(); i < _keyPresses.size(); i++)
+        {
+            keys.push(_keyPresses[i]);
+        }
 
     if (layout == NULL) {
 
     }
     else {
-        WinApiAdapter::SetKeyboardLayout(layout);
+        _layoutController->switchLayout(layout);
     }
 
-    Sleep(10);
-
-    std::string newWord = "";
+    QVector<KeyPress> keyPresses;
+    keyPresses.push_back(KeyPress(VK_SCROLL));
+    for(int i = 0; i < keys.size(); i++)
+    {
+         keyPresses.push_back(KeyPress(VK_BACK));
+    }
 
     while (!keys.empty()) {
-        WinApiAdapter::SendKeyPress(keys.front().getVkCode(), keys.front().isShiftPressed());
+        keyPresses.push_back(keys.front());
         keys.pop();
     }
 
-    Sleep(10);
+    keyPresses.push_back(KeyPress(VK_PAUSE));
 
-    _lastLayout = WinApiAdapter::GetLayout();
+    _state = SwitcherState::CHANGING;
+
+    WinApiAdapter::SendKeyPresses(keyPresses);
 
     _state = SwitcherState::WORKING;
+
+    _lastLayout = _layoutController->getLayout();
 }
 
 void CorrectLayout::checkLayout(const bool beforeKeyPress, const bool finished)
 {
-    if (_currentWord.length() > 0 && _state == SwitcherState::WORKING) {
+    if (_state == SwitcherState::WORKING) {
         QString wordToCheck = _currentWord;
         HKL layout = _layoutChecker.checkLayout(wordToCheck, finished);
         if (layout != nullptr && layout != _lastLayout) {
@@ -486,13 +347,24 @@ void CorrectLayout::checkLayout(const bool beforeKeyPress, const bool finished)
     }
 }
 
+void CorrectLayout::addKeyToQueue(KeyPress kp)
+{
+    _queueMutex.lock();
+    _keyQueue.enqueue(kp);
+    _queueMutex.unlock();
+    this->start();
+}
+
 IUIAutomationElement* CorrectLayout::getFocusedElement()
 {
     IUIAutomationElement *element;
 
     HRESULT hr = _automation->GetFocusedElement(&element);
     if(FAILED(hr))
+    {
+        qDebug() << "Failed to get focused element.";
         return NULL;
+    }
 
     return element;
 }
@@ -500,18 +372,50 @@ IUIAutomationElement* CorrectLayout::getFocusedElement()
 QString CorrectLayout::getElementText(IUIAutomationElement* element)
 {
     if(element == NULL)
+    {
         return "";
+    }
 
-    VARIANT name;
-    HRESULT hr = element->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&name);
+    IUIAutomationCondition* textPatternCondition;
+    IUIAutomationElement* keyboardFocus = NULL;
+    VARIANT trueVar;
+    trueVar.vt = VT_BOOL;
+    trueVar.boolVal = VARIANT_TRUE;
+    HRESULT hr = _automation->CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, trueVar, &textPatternCondition);
 
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to CreatePropertyCondition";
+        return "";
+    }
+    else
+    {
+        hr = element->FindFirst(TreeScope_Subtree, textPatternCondition, &keyboardFocus);
+        textPatternCondition->Release();
+        if (FAILED(hr))
+        {
+            qDebug() << "FindFirst failed";
+        }
+        else if (keyboardFocus == NULL)
+        {
+            qDebug() << "No element with keyboard focus found.";
+            return "";
+        }
+    }
+    VARIANT text;
+    hr = keyboardFocus->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
+    keyboardFocus->Release();
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to get element value.";
+        return "";
+    }
     if(SUCCEEDED(hr))
     {
-        wchar_t* t = name.bstrVal;
+        wchar_t* t = text.bstrVal;
         QString s = QString::fromWCharArray(t);
         return s;
     }
-
     return "";
 }
 bool CorrectLayout::compareElements(IUIAutomationElement *element1, IUIAutomationElement *element2)
@@ -561,4 +465,212 @@ bool CorrectLayout::compareElements(IUIAutomationElement *element1, IUIAutomatio
     }
 
     return true;
+}
+
+void CorrectLayout::onKeyProcessed()
+{
+    //timer.stop();
+    _queueMutex.lock();
+    if(!_keyQueue.empty())
+    {
+        _keyQueue.dequeue();
+        this->start();
+    }
+    _queueMutex.unlock();
+}
+
+void CorrectLayout::run()
+{
+    if(!_running)
+        return;
+
+    if (!GetAsyncKeyState(VK_LSHIFT) && !GetAsyncKeyState(VK_RSHIFT))
+    {
+        INPUT input = WinApiAdapter::MakeKeyInput(VK_SHIFT, false);
+        SendInput(1, &input, sizeof(INPUT));
+    }
+
+    if (_state == SwitcherState::CHANGING)
+        return;
+
+    if(_exception)
+        return;
+
+    //timer.start(10);
+
+    if(!_exceptions.empty())
+    {
+        QString windowExeName(WinApiAdapter::GetWindowExeName(GetForegroundWindow()));
+
+        if(!_whiteList)
+        {
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    return;
+                }
+            }
+        }
+        else
+        {
+            bool find = false;
+            for(int i = 0; i < _exceptions.size(); i++)
+            {
+                if(windowExeName.toLower().contains(_exceptions[i].toLower()))
+                {
+                    find = true;
+                    break;
+                }
+            }
+            if(!find)
+            {
+                return;
+            }
+        }
+    }
+    KeyPress keyPress;
+    if(_queueMutex.try_lock_for(std::chrono::milliseconds(10)) &&_keyQueue.size() > 0)
+    {
+        keyPress = _keyQueue.head();
+        _queueMutex.unlock();
+    }
+    else
+    {
+        _queueMutex.unlock();
+        return;
+    }
+
+    IUIAutomationElement* newElement = getFocusedElement();
+    if(_currentElement == NULL || !compareElements(_currentElement, newElement))
+    {
+        _currentText = "";
+        if(_currentElement != NULL)
+            _currentElement->Release();
+        _currentElement = newElement;
+        _state = SwitcherState::SEARCHING;
+        _keyPresses.clear();
+        _currentText = getElementText(_currentElement);
+    }
+
+    if(keyPress.getVkCode() == VK_SPACE || keyPress.getVkCode() == VK_RETURN)
+    {
+        checkLayout(false, true);
+        _currentText = "";
+        _state = SwitcherState::SEARCHING;
+        _keyPresses.clear();
+        _currentText = getElementText(_currentElement);
+    }
+
+    HKL newLayout = _layoutController->getLayout();
+    if(newLayout != _lastLayout && _lastLayout != NULL)
+    {
+        _state = SwitcherState::PAUSED;
+        _lastLayout = newLayout;
+    }
+
+    _currentText = _currentText.replace('\n', ' ').replace('\r', ' ');
+
+    if(_state == SwitcherState::PAUSED)
+        return;
+
+    if(_keyPresses.size() == 0)
+    {
+        _keyPresses.push_back(keyPress);
+        return;
+    }
+
+    if(keyPress.getVkCode() == VK_BACK)
+    {
+        _keyPresses.pop_back();
+        _currentText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');
+        return;
+    }
+
+    if(!keyPress.isPrintable())
+    {
+        _keyPresses.push_back(keyPress);
+        return;
+    }
+
+    _keyPresses.push_back(keyPress);
+
+    if(_layoutChecker.isKeyInDictionary(keyPress.getVkCode()))
+    {
+        QString newText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');
+        QStringList oldWords = _currentText.split(' ');
+        QStringList newWords = newText.split(' ');
+        QStringList changedWords;
+        if(newWords.size() == oldWords.size())
+        {
+            for(int i = 0; i < newWords.size(); i++)
+            {
+                if(newWords[i] != oldWords[i])
+                {
+                    changedWords.push_back(oldWords[i]);
+                    changedWords.push_back(newWords[i]);
+                }
+            }
+            if(changedWords.size() != 2)
+            {
+                _state = SwitcherState::SEARCHING;
+            }
+            else
+            {
+                if(_state == SwitcherState::SEARCHING)
+                {
+                    QString oldWord = changedWords[0];
+                    QString newWord = changedWords[1];
+                    for(int i = oldWord.size(); i >= 0; i--)
+                    {
+                        QString variant = oldWord;
+
+                        variant.insert(i, keyPress.toChar());
+
+                        if(variant == newWord && i == newWord.size() - 1)
+                        {
+                            _position = i + 1;
+                            _state = SwitcherState::WORKING;
+                        }
+                    }
+                }
+                else if(_state == SwitcherState::WORKING)
+                {
+                    QString oldWord = changedWords[0];
+                    oldWord.insert(_position, keyPress.toChar());
+                    oldWord = oldWord.toLower();
+                    QString newWord = changedWords[1].toLower();
+                    if(newWord == oldWord)
+                    {
+                        _position++;
+
+                        _currentWord = newWord;
+                        if (_currentWord.length() > 2) {
+                            bool needShift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
+                            checkLayout(false, false);
+                            if (needShift == true)
+                            {
+                                INPUT input = WinApiAdapter::MakeKeyInput(VK_SHIFT, true);
+                                SendInput(1, &input, sizeof(INPUT));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _state = SwitcherState::SEARCHING;
+                    }
+                }
+            }
+        }
+        else
+        {
+            _state = SwitcherState::SEARCHING;
+        }
+
+        _currentText = newText;
+    }
+    else
+    {
+        _state = SwitcherState::PAUSED;
+    }
 }

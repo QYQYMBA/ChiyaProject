@@ -206,6 +206,94 @@ void WinApiAdapter::SendKeyPress(int vkCode, bool shift, bool ctrl, bool alt)
 
 }
 
+void WinApiAdapter::SendKeyPress(KeyPress kp)
+{
+    INPUT down = MakeKeyInput(kp.getVkCode(), true);
+    INPUT up = MakeKeyInput(kp.getVkCode(), false);
+
+    if(kp.isCtrlPressed())
+    {
+        INPUT ctrlDown = MakeKeyInput(VK_CONTROL, true);
+        SendInput(1, &ctrlDown, sizeof(INPUT));
+    }
+
+    if(kp.isShiftPressed())
+    {
+        INPUT shiftDown = MakeKeyInput(VK_SHIFT, true);
+        SendInput(1, &shiftDown, sizeof(INPUT));
+    }
+
+    if(kp.isAltPressed())
+    {
+        INPUT altDown = MakeKeyInput(VK_MENU, true);
+        SendInput(1, &altDown, sizeof(INPUT));
+    }
+
+    SendInput(1, &down, sizeof(INPUT));
+    SendInput(1, &up, sizeof(INPUT));
+
+    if(kp.isCtrlPressed())
+    {
+        INPUT ctrlUp = MakeKeyInput(VK_CONTROL, false);
+        SendInput(1, &ctrlUp, sizeof(INPUT));
+    }
+
+    if(kp.isShiftPressed())
+    {
+        INPUT shiftUp = MakeKeyInput(VK_SHIFT, false);
+        SendInput(1, &shiftUp, sizeof(INPUT));
+    }
+
+    if(kp.isAltPressed())
+    {
+        INPUT altUp = MakeKeyInput(VK_MENU, false);
+        SendInput(1, &altUp, sizeof(INPUT));
+    }
+}
+
+void WinApiAdapter::SendKeyPresses(QVector<KeyPress> keyPresses)
+{
+    INPUT pInputs[1000];
+    UINT n = 0;
+    for(KeyPress kp : keyPresses)
+    {
+
+        if(kp.isCtrlPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_CONTROL, true);
+        }
+
+        if(kp.isShiftPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_SHIFT, true);
+        }
+
+        if(kp.isAltPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_MENU, true);
+        }
+
+        pInputs[++n] = MakeKeyInput(kp.getVkCode(), true);
+        pInputs[++n] = MakeKeyInput(kp.getVkCode(), false);
+
+        if(kp.isCtrlPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_CONTROL, false);
+        }
+
+        if(kp.isShiftPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_SHIFT, false);
+        }
+
+        if(kp.isAltPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_MENU, false);
+        }
+    }
+    SendInput(n, pInputs, sizeof(INPUT));
+}
+
 WinApiAdapter::WinApiAdapter()
 {
 }

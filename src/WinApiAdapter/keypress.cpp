@@ -30,8 +30,62 @@ KeyPress::KeyPress(RAWKEYBOARD key, bool shift, bool caps, bool ctrl, bool alt, 
     }
 }
 
+KeyPress::KeyPress(int vkCode, int scanCode, bool shift, bool caps, bool ctrl, bool alt, HKL keyboardLayout, bool getKeyboardState)
+{
+    this->vkCode = vkCode;
+    this->scanCode = scanCode;
+
+    this->shift = shift;
+    this->caps = caps;
+    this->ctrl = ctrl;
+
+    this->alt = alt;
+
+    this->keyboardLayout = keyboardLayout;
+
+    if(getKeyboardState)
+    {
+        GetKeyboardState(keyboardState);
+    }
+    else
+    {
+
+    }
+}
+
 KeyPress::KeyPress(PKBDLLHOOKSTRUCT key, bool shift, bool caps, bool ctrl, bool alt, HKL keyboardLayout, bool getKeyboardState)
 {
+    if (key != nullptr) {
+        this->vkCode = key->vkCode;
+        this->scanCode = key->scanCode;
+    }
+    else
+    {
+        this->vkCode = 0;
+        this->scanCode = 0;
+    }
+    this->shift = shift;
+    this->caps = caps;
+    this->ctrl = ctrl;
+
+    this->alt = alt;
+
+    this->keyboardLayout = keyboardLayout;
+
+    if(getKeyboardState)
+    {
+        GetKeyboardState(keyboardState);
+    }
+    else
+    {
+
+    }
+}
+
+KeyPress::KeyPress(LPARAM lParam, bool shift, bool caps, bool ctrl, bool alt, HKL keyboardLayout, bool getKeyboardState)
+{
+    PKBDLLHOOKSTRUCT key = (PKBDLLHOOKSTRUCT) lParam;
+
     if (key != nullptr) {
         this->vkCode = key->vkCode;
         this->scanCode = key->scanCode;
@@ -88,7 +142,8 @@ QChar KeyPress::toChar(HKL layout) {
 
 bool KeyPress::isPrintable() {
     int vkCode = this->vkCode;
-    if (vkCode == VK_MENU || vkCode == VK_SHIFT || vkCode == VK_LWIN  || vkCode == VK_PAUSE) { return false; }
+    if (vkCode == VK_SHIFT) { return true; }
+    if (vkCode == VK_MENU || vkCode == VK_LWIN  || vkCode == VK_PAUSE) { return false; }
     if (vkCode >= 48 && vkCode <= 90) { return true; }
     if (vkCode >= 186 && vkCode <= 226) { return true; }
     if (vkCode >= 106 && vkCode <= 111) { return true; }
@@ -106,6 +161,16 @@ int KeyPress::getVkCode()
 bool KeyPress::isShiftPressed()
 {
     return shift;
+}
+
+bool KeyPress::isCtrlPressed()
+{
+    return ctrl;
+}
+
+bool KeyPress::isAltPressed()
+{
+    return alt;
 }
 
 KeyPress KeyPress::CharToKey(QChar ch, const HKL layout)
