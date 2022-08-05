@@ -14,13 +14,18 @@ public:
     bool getReslut();
     void passArguments(int nCode, WPARAM wParam, LPARAM lParam);
 
+    void blockInput();
+    bool switcherWork();
+
     int nCode;
     WPARAM wParam;
     LPARAM lParam;
 private:
-    bool result;
-    QQueue<KeyPress> _userKeyPresses;
+    bool _result;
     bool _state;
+    bool _switcherWork;
+    QQueue<KeyPress> _userKeyPresses;
+
 protected:
     void run();
 };

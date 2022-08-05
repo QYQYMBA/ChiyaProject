@@ -158,6 +158,11 @@ int KeyPress::getVkCode()
     return vkCode;
 }
 
+HKL KeyPress::getLayout()
+{
+    return keyboardLayout;
+}
+
 bool KeyPress::isShiftPressed()
 {
     return shift;

@@ -17,6 +17,7 @@ public:
     QChar toChar(HKL layout);
     bool isPrintable();
     int getVkCode();
+    HKL getLayout();
     bool isShiftPressed();
     bool isCtrlPressed();
     bool isAltPressed();

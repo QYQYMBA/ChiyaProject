@@ -23,7 +23,7 @@ struct LayoutSwitchSettings
     Key shortcutSelect;
 };
 
-class CorrectLayout : public QThread
+class CorrectLayout
 {
 public:
     CorrectLayout(HWND hwnd, LayoutController* _layoutContoller);
@@ -47,10 +47,13 @@ private:
     void getLayoutSettingsList();
 
     void convertSelection();
-    void convertCurrentWord(HKL layout);
+    void convertCurrentWord(HKL layout, bool finished);
     void checkLayout(const bool beforeKeyPress, const bool finished);
 
     void addKeyToQueue(KeyPress kp);
+
+    void handleKeyAsync();
+    void startHandleKey();
 
     IUIAutomationElement* getFocusedElement();
     QString getElementText(IUIAutomationElement* element);
@@ -95,11 +98,7 @@ private:
     bool _exception;
 
     QMutex _queueMutex;
-
-private slots:
-    void onKeyProcessed();
-protected:
-    void run();
+    QMutex _keyMutex;
 };
 
 #endif // CORRECTLAYOUT_H

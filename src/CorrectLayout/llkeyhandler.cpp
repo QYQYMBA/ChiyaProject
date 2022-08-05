@@ -6,7 +6,7 @@ LlKeyHandler::LlKeyHandler()
     :_userKeyPresses()
 {
     _state = false;
-    result = false;
+    _result = false;
 }
 
 bool LlKeyHandler::handleLlKey()
@@ -14,17 +14,14 @@ bool LlKeyHandler::handleLlKey()
     PKBDLLHOOKSTRUCT key = (PKBDLLHOOKSTRUCT) lParam;
     if(key->flags & LLKHF_INJECTED)
     {
-        if(key->vkCode == VK_PAUSE)
+        if(key->vkCode == VK_PAUSE && _state == true)
         {
             _state = false;
+            _switcherWork = true;
             while(!_userKeyPresses.empty())
             {
                 WinApiAdapter::SendKeyPress(_userKeyPresses.dequeue());
             }
-        }
-        if(key->vkCode == VK_SCROLL)
-        {
-            _state = true;
         }
         return false;
     }
@@ -53,7 +50,7 @@ bool LlKeyHandler::handleLlKey()
 
 bool LlKeyHandler::getReslut()
 {
-    return result;
+    return _result;
 }
 
 void LlKeyHandler::passArguments(int nCode, WPARAM wParam, LPARAM lParam)
@@ -63,8 +60,24 @@ void LlKeyHandler::passArguments(int nCode, WPARAM wParam, LPARAM lParam)
     this->lParam = lParam;
 }
 
+void LlKeyHandler::blockInput()
+{
+    _state = true;
+}
+
+bool LlKeyHandler::switcherWork()
+{
+    if(_switcherWork)
+    {
+        _switcherWork = false;
+        return true;
+    }
+
+    return false;
+}
+
 void LlKeyHandler::run()
 {
-    result = false;
-    result = handleLlKey();
+    _result = false;
+    _result = handleLlKey();
 }
