@@ -12,11 +12,8 @@
 const int MAXNAMELENGTH = 30;
 
 CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
-    : _llKeyHandler(),
-      timer(),
-      _layoutChecker(),
-      _queueMutex(),
-      _keyMutex()
+    : timer(),
+      _layoutChecker()
 {
     _settings.beginGroup("CorrectLayout");
 
@@ -24,8 +21,6 @@ CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
     _initialized = false;
 
     _layoutController = layoutController;
-    //_currentElement = NULL;
-
     _myHWND = hwnd;
 }
 
@@ -99,16 +94,14 @@ bool CorrectLayout::init()
     if(FAILED(hr))
         qDebug() << "Automation can not be initialized";
 
-    _fceh = new FocusChangedEventHandler(_automation);
+    _pceh = new PropertyChangedEventHandler(_automation, this);
+    _fceh = new FocusChangedEventHandler(_automation, _pceh);
     hr = _automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)_fceh);
 
     qDebug() << "Start loading dictionaries";
 
     std::vector<HKL> layoutsList = WinApiAdapter::getLayoutsList();
 
-    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonDown, &CorrectLayout::handleKey, this, true);
-    _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
-    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
 
     for (int i = 0; i < layoutsList.size(); i++)
@@ -122,7 +115,10 @@ bool CorrectLayout::init()
         qDebug() << "Start loading " << QString::fromWCharArray(name) << " dictionary";
 
         QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(layoutsList[i]) + ".txt";
-        _layoutChecker.load(path, layoutsList[i]);
+        if (QFile::exists(path))
+            _layoutChecker.load(path, layoutsList[i]);
+        else
+            qDebug() << "No dictionary file!";
         qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
     }
 
@@ -138,51 +134,6 @@ bool CorrectLayout::init()
 bool CorrectLayout::isRunning()
 {
     return _running;
-}
-
-void CorrectLayout::handleKey(RAWKEYBOARD rk)
-{
-    if(_state == SwitcherState::CHANGING)
-    {
-        return;
-    }
-
-    bool ctrl = GetAsyncKeyState(VK_CONTROL);
-    bool shift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
-    bool alt = GetAsyncKeyState(VK_MENU);
-
-    KeyPress keyPress(rk, shift, true, ctrl, alt, _layoutController->getLayout());
-
-    if(_llKeyHandler.wait(3))
-    {
-        Sleep(2);
-
-        addKeyToQueue(keyPress);
-
-        startHandleKey();
-    }
-}
-
-bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    _llKeyHandler.passArguments(nCode, wParam, lParam);
-    if(_llKeyHandler.switcherWork())
-    {
-        _state = SwitcherState::WORKING;
-    }
-    if(_state == SwitcherState::CHANGING)
-        _llKeyHandler.blockInput();
-    _llKeyHandler.start();
-    QDeadlineTimer dt(3);
-    _llKeyHandler.wait(dt);
-    return _llKeyHandler.getReslut();
-}
-
-void CorrectLayout::handleMouse(RAWMOUSE mouse)
-{
-    _state = SwitcherState::SEARCHING;
-    _currentWord = "";
-    _keyPresses.clear();
 }
 
 void CorrectLayout::windowSwitched(HWND hwnd)
@@ -301,69 +252,15 @@ void CorrectLayout::getLayoutSettingsList()
 
 void CorrectLayout::convertCurrentWord(HKL layout, bool finised)
 {
-    QString word = _currentWord;
-
-    if (word.size() == 0 || _state == SwitcherState::SEARCHING)
-        return;
-
-    _state = SwitcherState::CHANGING;
-
-    std::queue<KeyPress> keys;
-    if(_keyPresses.size() > _currentWord.size())
-    {
-        for(int i = _keyPresses.size() - _currentWord.size(); i < _keyPresses.size(); i++)
-        {
-            keys.push(_keyPresses[i]);
-        }
-    }
-    else
-    {
-        for(int i = 0; i < _currentWord.size(); i++)
-        {
-            keys.push(KeyPress::CharToKey(_currentWord[i], _keyPresses[_keyPresses.size() - 1].getLayout()));
-        }
-    }
-
-
-    if(finised)
-        keys.push(_keyToProcess);
-
-    if (layout == NULL) {
-
-    }
-    else {
-        _layoutController->switchLayout(layout);
-    }
-
-    Sleep(50);
-
-    QVector<KeyPress> keyPresses;
-    for(int i = 0; i < keys.size(); i++)
-    {
-         keyPresses.push_back(KeyPress(VK_BACK));
-    }
-
-    while (!keys.empty()) {
-        keyPresses.push_back(keys.front());
-        keys.pop();
-    }
-
-    keyPresses.push_back(KeyPress(VK_PAUSE));
-
-    WinApiAdapter::SendKeyPresses(keyPresses);
-
-    _lastLayout = _layoutController->getLayout();
+    qDebug() << "Nado";
 }
 
-void CorrectLayout::checkLayout(const bool beforeKeyPress, const bool finished)
+void CorrectLayout::checkLayout(const bool finished)
 {
-    //if (_state == SwitcherState::WORKING) {
+    if (_state == SwitcherState::WORKING) {
         QString wordToCheck = _currentWord;
         HKL layout = _layoutChecker.checkLayout(wordToCheck, finished);
         if (layout != nullptr && layout != _lastLayout) {
-            if (beforeKeyPress) {
-                _currentWord = _currentWord.mid(0, _currentWord.length() - 1);
-            }
             QString changedWord = wordToCheck;
             _layoutChecker.changeWordLayout(changedWord, layout);
             if(changedWord != _currentWord)
@@ -373,183 +270,10 @@ void CorrectLayout::checkLayout(const bool beforeKeyPress, const bool finished)
             }
 
         }
-    //}
+    }
 }
 
-void CorrectLayout::addKeyToQueue(KeyPress kp)
-{
-    _queueMutex.lock();
-    _keyQueue.enqueue(kp);
-    _queueMutex.unlock();
-}
-
-IUIAutomationElement* CorrectLayout::getFocusedElement()
-{
-    IUIAutomationElement *element;
-
-    HRESULT hr = _automation->GetFocusedElement(&element);
-    if(FAILED(hr))
-    {
-        qDebug() << "Failed to get focused element.";
-        return NULL;
-    }
-
-    return element;
-}
-
-QString CorrectLayout::getElementText(IUIAutomationElement* element)
-{
-    if(element == NULL)
-    {
-        return "";
-    }
-
-    IUIAutomationCondition* hasKeyboardFocusCondition;
-    IUIAutomationCondition* isTextPatternAvailable;
-    IUIAutomationCondition* textHasKeyboardFocus;
-    IUIAutomationCondition* notPassword;
-    IUIAutomationCondition* searchCondition;
-    IUIAutomationElement* keyboardFocus = NULL;
-    VARIANT trueVar;
-    trueVar.vt = VT_BOOL;
-    trueVar.boolVal = VARIANT_TRUE;
-    VARIANT falseVar;
-    falseVar.vt = VT_BOOL;
-    falseVar.boolVal = VARIANT_FALSE;
-    HRESULT hr = _automation->CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, trueVar, &hasKeyboardFocusCondition);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-    hr = _automation->CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, trueVar, &isTextPatternAvailable);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-    hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, falseVar, &notPassword);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-
-    _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreateAndCondition";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-
-    _automation->CreateAndCondition(textHasKeyboardFocus, notPassword, &searchCondition);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreateAndCondition";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-    else
-    {
-        hr = element->FindFirst(TreeScope_Subtree, searchCondition, &keyboardFocus);
-        searchCondition->Release();
-        if (FAILED(hr))
-        {
-            qDebug() << "FindFirst failed";
-            _state = SwitcherState::PAUSED;
-            return "";
-        }
-        else if (keyboardFocus == NULL)
-        {
-            qDebug() << "No element with keyboard focus found or it doesn't support TextPattern.";
-            _state = SwitcherState::PAUSED;
-            return "";
-        }
-        hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, trueVar, &notPassword);
-        if (FAILED(hr))
-        {
-            qDebug() << "Failed to CreatePropertyCondition";
-            _state = SwitcherState::PAUSED;
-            return "";
-        }
-    }
-    VARIANT text;
-    hr = keyboardFocus->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
-    keyboardFocus->Release();
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to get element value.";
-        _state = SwitcherState::PAUSED;
-        return "";
-    }
-    if(SUCCEEDED(hr))
-    {
-        wchar_t* t = text.bstrVal;
-        QString s = QString::fromWCharArray(t);
-        return s;
-    }
-    return "";
-}
-bool CorrectLayout::compareElements(IUIAutomationElement *element1, IUIAutomationElement *element2)
-{
-    if(element1 == NULL || element2 == NULL)
-        return false;
-
-    VARIANT runtimeID1;
-    HRESULT hr1 = element1->GetCurrentPropertyValue(UIA_RuntimeIdPropertyId ,&runtimeID1);
-    SAFEARRAY* sa1 = runtimeID1.parray;
-
-    LONG lBound1, uBound1;
-    SafeArrayGetLBound(sa1, 1, &lBound1);
-    SafeArrayGetUBound(sa1, 1, &uBound1);
-    LONG count1 = uBound1 - lBound1 + 1;  // bounds are inclusive
-
-    int* raw1;
-    SafeArrayAccessData(sa1, (void**)&raw1);
-
-    if(raw1 == NULL)
-        return false;
-
-    std::vector<int> v1(raw1, raw1 + count1);
-
-    VARIANT runtimeID2;
-    HRESULT hr2 = element2->GetCurrentPropertyValue(UIA_RuntimeIdPropertyId ,&runtimeID2);
-    SAFEARRAY* sa2 = runtimeID2.parray;
-
-    LONG lBound2, uBound2;
-    SafeArrayGetLBound(sa2, 1, &lBound2);
-    SafeArrayGetUBound(sa2, 1, &uBound2);
-    LONG count2 = uBound2 - lBound2 + 1;  // bounds are inclusive
-
-    int* raw2;
-    SafeArrayAccessData(sa2, (void**)&raw2);
-
-    std::vector<int> v2(raw2, raw2 + count2);
-
-    if(raw2 == NULL)
-        return false;
-
-    if(v1.size() == v2.size())
-    {
-        for(int i = 0; i < v1.size(); i++)
-        {
-            if(v1[i] != v2[i])
-                return false;
-        }
-    }
-    else
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void CorrectLayout::handleKeyAsync()
+/*void CorrectLayout::handleKeyAsync()
 {
     if(!_running)
         return;
@@ -610,7 +334,7 @@ void CorrectLayout::handleKeyAsync()
         return;
     }
 
-    /*IUIAutomationElement* newElement = getFocusedElement();
+    IUIAutomationElement* newElement = getFocusedElement();
     _currentElement = getFocusedElement();
     if(_currentElement == NULL || !compareElements(_currentElement, newElement))
     {
@@ -620,19 +344,19 @@ void CorrectLayout::handleKeyAsync()
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
         _currentText = getElementText(_currentElement);
-    }*/
-    if(_fceh->elementChanged())
+    }
+    if(_fceh->elementChanged(true))
     {
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
-        _currentText = _fceh->getElementText();
+        _currentText = _pceh->getText();
     }
 
     if(_keyToProcess.getVkCode() == VK_RETURN)
     {
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
-        _currentText = _fceh->getElementText();
+        _currentText = _pceh->getText();
         return;
     }
 
@@ -641,7 +365,7 @@ void CorrectLayout::handleKeyAsync()
         checkLayout(false, true);
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
-        _currentText = _fceh->getElementText();
+        _currentText = _pceh->getText();
         return;
     }
 
@@ -663,14 +387,14 @@ void CorrectLayout::handleKeyAsync()
         {
             _keyPresses.pop_back();
         }
-        _currentText = _fceh->getElementText().replace('\n', ' ').replace('\r', ' ');
+        _currentText = _pceh->getText().replace('\n', ' ').replace('\r', ' ');
         return;
     }
 
     if(!_keyToProcess.isPrintable())
     {
         _keyPresses.push_back(_keyToProcess);
-        _currentText = _fceh->getElementText();
+        _currentText = _pceh->getText();
         return;
     }
 
@@ -678,7 +402,10 @@ void CorrectLayout::handleKeyAsync()
 
     if(_layoutChecker.isKeyInDictionary(_keyToProcess.getVkCode()))
     {
-        QString newText = _fceh->getElementText().replace('\n', ' ').replace('\r', ' ');
+        QString newText = _pceh->getText().replace('\n', ' ').replace('\r', ' ');
+        qDebug() << newText;
+        qDebug() << _currentText;
+        qDebug() << "\n\n\n\n\n";
         QStringList oldWords = _currentText.split(' ');
         QStringList newWords = newText.split(' ');
         QStringList changedWords;
@@ -727,6 +454,7 @@ void CorrectLayout::handleKeyAsync()
                         _currentWord = newWord;
                         if (_currentWord.length() > 2) {
                             bool needShift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
+                            qDebug() << _currentWord;
                             checkLayout(false, false);
                             if (needShift == true)
                             {
@@ -754,27 +482,77 @@ void CorrectLayout::handleKeyAsync()
         if(_keyToProcess.getVkCode() != VK_SHIFT && _keyToProcess.getVkCode() != VK_LSHIFT && _keyToProcess.getVkCode() != VK_RSHIFT && _keyToProcess.getVkCode() != VK_CAPITAL)
             _state = SwitcherState::PAUSED;
     }
-}
+}*/
 
-void CorrectLayout::startHandleKey()
+void CorrectLayout::handleValueChange(QString newText)
 {
-    if(!_keyMutex.try_lock())
-        return;
-    handleKeyAsync();
-    while(true)
+    HKL newLayout = _layoutController->getLayout();
+    if(newLayout != _lastLayout)
     {
-        _queueMutex.lock();
-        if(!_keyQueue.empty())
+        _state = SwitcherState::PAUSED;
+        _lastLayout = newLayout;
+    }
+
+    newText = newText.replace('\n', ' ').replace('\r', ' ');
+    if(!_fceh->elementChanged(true)){
+        QStringList oldWords = _currentText.split(' ');
+        QStringList newWords = newText.split(' ');
+        QStringList changedWords;
+        if(newWords.size() == oldWords.size())
         {
-            _keyQueue.dequeue();
-            _queueMutex.unlock();
-            handleKeyAsync();
+            for(int i = 0; i < newWords.size(); i++)
+            {
+                if(newWords[i] != oldWords[i])
+                {
+                    changedWords.push_back(oldWords[i]);
+                    changedWords.push_back(newWords[i]);
+                }
+            }
+            if(changedWords.size() != 2)
+            {
+                _state = SwitcherState::SEARCHING;
+            }
+            else
+            {
+                if(_state == SwitcherState::SEARCHING)
+                {
+                    QString oldWord = changedWords[0];
+                    QString newWord = changedWords[1];
+                    if(newWord.mid(0, newWord.length()-1) == oldWord)
+                    {
+                        _position = newWord.length();
+                        _state = SwitcherState::WORKING;
+                    }
+                }
+                else if(_state == SwitcherState::WORKING)
+                {
+                    QString oldWord = changedWords[0];
+                    QString newWord = changedWords[1];
+                    if(newWord.mid(0, newWord.length()-1) == oldWord)
+                    {
+                        _position++;
+
+                        _currentText = newText;
+                        _currentWord = newWord;
+                        if (_currentWord.length() > 2) {
+                            checkLayout(false);
+                        }
+                    }
+                    else
+                    {
+                        _state = SwitcherState::SEARCHING;
+                    }
+                }
+            }
         }
         else
         {
-            _queueMutex.unlock();
-            break;
+            _state = SwitcherState::SEARCHING;
         }
     }
-    _keyMutex.unlock();
+    else
+    {
+        _state = SwitcherState::SEARCHING;
+    }
+    _currentText = newText;
 }

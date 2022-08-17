@@ -8,10 +8,9 @@
 #include <windows.h>
 #include <string>
 
-#include "keypress.h"
-
+typedef std::map<int, QChar> VkToChar;
 typedef std::map<QString, int> Words;
-typedef std::pair<QString, Words> Dictionary;
+typedef std::pair<std::pair<VkToChar, VkToChar>, Words> Dictionary;
 typedef std::map<HKL, Dictionary> Dictionaries;
 
 class LayoutChecker
@@ -26,8 +25,11 @@ private:
     Dictionaries _dictionaries;
     std::map<int, int> possibleKeys;
 
+    QString getAlphabet(HKL layout);
+    QChar vkToChar(HKL layout, int vk);
+    int charToVk(HKL layout, QChar c);
     void generateEdits(const QString& word, std::vector<QString>& result, const HKL layout);
-    bool findPrefix(const QString& word, const HKL layout);
+    bool findPrefix(QString word, const HKL layout);
     int findWord(const QString& word, const HKL layout);
 };
 

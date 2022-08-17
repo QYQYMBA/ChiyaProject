@@ -116,6 +116,8 @@ KeyPress::KeyPress(LPARAM lParam, bool shift, bool caps, bool ctrl, bool alt, HK
 QChar KeyPress::toChar() {
     WCHAR uc[5] = {};
 
+    GetKeyboardState(keyboardState);
+
     int res = ToUnicodeEx(vkCode, scanCode, keyboardState, uc, 4, 0, keyboardLayout);
     if(res >= 1)
     {
@@ -129,7 +131,9 @@ QChar KeyPress::toChar() {
 QChar KeyPress::toChar(HKL layout) {
     WCHAR uc[5] = {};
 
-    int res = ToUnicodeEx(vkCode, scanCode, keyboardState, uc, 4, 0, layout);
+    memset(keyboardState, 0, sizeof(keyboardState));
+
+    int res = ToUnicodeEx(vkCode, MapVirtualKey(vkCode, 0), keyboardState, uc, 4, 0, layout);
     if(res >= 1)
     {
         QChar k = QString::fromWCharArray(uc)[0];

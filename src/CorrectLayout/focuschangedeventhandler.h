@@ -10,20 +10,19 @@
 class FocusChangedEventHandler : IUIAutomationFocusChangedEventHandler
 {
 public:
-    FocusChangedEventHandler(IUIAutomation* automation);
-    QString getElementText();
-    bool elementChanged();
+    FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh);
+    bool elementChanged(bool reset);
 
     HRESULT QueryInterface(REFIID riid, LPVOID *ppvObj);
     ULONG AddRef();
     ULONG Release();
 private:
     PropertyChangedEventHandler* _pceh;
-    IUIAutomationElement* _sender;
     bool _elementChanged;
     ULONG _cRef;
     IUIAutomation* _automation;
-    QString getElementText(IUIAutomationElement* element);
+    IUIAutomationElement* _keyboardFocus;
+    IUIAutomationElement* findElement(IUIAutomationElement* element);
     HRESULT HandleFocusChangedEvent(IUIAutomationElement *sender);
 };
 

@@ -4,7 +4,6 @@
 #include <QFile>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <algorithm>
 #include <regex>
 
@@ -12,9 +11,10 @@
 
 void LayoutChecker::load(const QString filename, const HKL layout)
 {
+    int vkCodes[] = {192,49,50,51,52,53,54,55,56,57,48,189,187,81,87,69,82,84,89,85,73,79,80,219,221,220,65,83,68,70,71,72,74,75,76,186,222,90,88,67,86,66,78,77,188,190,191};
+
     Words* words = &_dictionaries[layout].second;
     struct stat buffer;
-    QString alphabet = "";
 
     if (stat(filename.toStdString().c_str(), &buffer) != 0) {
         _dictionaries[layout].second = *words;
@@ -27,20 +27,21 @@ void LayoutChecker::load(const QString filename, const HKL layout)
     if (!inputFile.open(QFile::ReadOnly | QFile::Text)) return;
     QTextStream in(&inputFile);
 
-    alphabet = in.readLine();
+    QString noShift = in.readLine();
+    for (int i = 0; i < sizeof(vkCodes)/sizeof(int); i++){
+        _dictionaries[layout].first.first[vkCodes[i]] = noShift[i];
+        possibleKeys[vkCodes[i]]++;
+    }
+
+    QString shift = in.readLine();
+    for (int i = 0; i < sizeof(vkCodes)/sizeof(int); i++){
+        _dictionaries[layout].first.second[vkCodes[i]] = shift[i];
+    }
 
     while (!in.atEnd())
     {
         QString line = in.readLine();
         (*words)[line]++;
-    }
-
-    _dictionaries[layout].first = alphabet;
-
-    for(QChar c : alphabet)
-    {
-        KeyPress k = KeyPress::CharToKey(c, layout);
-        possibleKeys[k.getVkCode()]++;
     }
 
     qDebug() << "Log: " << "For this layout alphabet is " << _dictionaries[layout].first;
@@ -56,9 +57,10 @@ void LayoutChecker::generateEdits(const QString& word, std::vector<QString>& res
     {
         result.push_back(word.mid(0, i) + word[i + 1] + word[i] + word.mid(i + 2)); //transposition
     }
-    for(size_t i = 0; i <  _dictionaries[layout].first.size(); i++)
+    QString alphabet = getAlphabet(layout);
+    for(size_t i = 0; i < sizeof(alphabet); i++)
     {
-        QChar letter = _dictionaries[layout].first[i];
+        QChar letter = alphabet[i];
         for (std::string::size_type i = 0; i < word.size(); i++)
         {
             result.push_back(word.mid(0, i) + letter + word.mid(i + 1)); //alterations
@@ -78,9 +80,10 @@ HKL LayoutChecker::checkLayout(const QString& word, const bool finished) {
     edits.clear();
 
     QString translatedWord = word;
+    translatedWord = translatedWord.toLower();
 
     for (auto it = _dictionaries.begin(); it != _dictionaries.end(); it++) {
-        alphabet += it->second.first;
+        alphabet += getAlphabet(it->first);
     }
 
     for (int i = 0; i < translatedWord.size(); i++)
@@ -167,7 +170,7 @@ HKL LayoutChecker::checkLayout(const QString& word, const bool finished) {
 HKL LayoutChecker::identifyLayout(const QString& word) {
     for (auto it = _dictionaries.begin(); it != _dictionaries.end(); it++)
     {
-        QString alphabet = it->second.first;
+        QString alphabet = getAlphabet(it->first);
         bool currentAlphabet = true;
         for (std::size_t i = 0; i < word.length(); i++) {
             if (alphabet.indexOf(word[i]) == std::string::npos)
@@ -181,7 +184,7 @@ HKL LayoutChecker::identifyLayout(const QString& word) {
     }
     for (auto it = _dictionaries.begin(); it != _dictionaries.end(); it++)
     {
-        QString alphabet = it->second.first;
+        QString alphabet = getAlphabet(it->first);
         for (std::size_t i = 0; i < word.length(); i++) {
             if (alphabet.indexOf(word[i]) != std::string::npos)
             {
@@ -198,8 +201,8 @@ void LayoutChecker::changeWordLayout(QString& word, const HKL layout)
   HKL currentLayout = identifyLayout(oldWord);
   word = "";
   for (std::string::size_type i = 0; i < oldWord.length(); i++) {
-      KeyPress k = KeyPress::CharToKey(oldWord[i], currentLayout);
-      word += k.toChar(layout);
+      int c = charToVk(currentLayout, oldWord[i]);
+      word += vkToChar(layout, c);
   }
   word = word.toLower();
 }
@@ -210,17 +213,47 @@ bool LayoutChecker::isKeyInDictionary(int vkCode)
     return (it != possibleKeys.end());
 }
 
-bool LayoutChecker::findPrefix(const QString& word, const HKL layout) {
+QString LayoutChecker::getAlphabet(HKL layout)
+{
+    QString alphabet = "";
+    VkToChar vkToChar = _dictionaries[layout].first.first;
+    for (auto it = vkToChar.begin(); it != vkToChar.end(); it++)
+    {
+        alphabet += it->second;
+    }
+    return alphabet;
+}
+
+QChar LayoutChecker::vkToChar(HKL layout, int vk)
+{
+    return _dictionaries[layout].first.first[vk];
+}
+
+int LayoutChecker::charToVk(HKL layout, QChar c)
+{
+    c = c.toLower();
+    VkToChar vkToChar = _dictionaries[layout].first.first;
+    for (auto it = vkToChar.begin(); it != vkToChar.end(); it++)
+    {
+        if (it->second == c)
+            return it->first;
+    }
+    return -1;
+}
+
+bool LayoutChecker::findPrefix(QString word, const HKL layout) {
     Dictionary* dictionary = &(_dictionaries.find(layout)->second);
     Words *words = &(dictionary->second);
 
     Words::const_iterator i = (*words).lower_bound(word);
-    if (i != (*words).end()) {
-        const QString& key = i->first;
-        if (key.toStdString().compare(0, word.toStdString().size(), word.toStdString()) == 0)
+    while (i != (*words).end()) {
+        QString key = i->first;
+        key = key.mid(0, word.length());
+        if (key == word)
         {
             return true;
         }
+        i++;
     }
 
     return false;

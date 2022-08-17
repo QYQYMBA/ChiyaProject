@@ -1,4 +1,5 @@
 #include "propertychangedeventhandler.h"
+#include "correctlayout.h"
 
 #include "QtDebug"
 
@@ -7,21 +8,18 @@
 #include <tuple>
 #include <propvarutil.h>
 
-std::string stringify(std::variant<std::string, int, float> const& value) {
-    if(int const* pval = std::get_if<int>(&value))
-      return std::to_string(*pval);
-
-    if(float const* pval = std::get_if<float>(&value))
-      return std::to_string(*pval);
-
-    return std::get<std::string>(value);
+PropertyChangedEventHandler::PropertyChangedEventHandler(IUIAutomation *automation, void* cl)
+{
+    _automation = automation;
+    mutex.lock();
+    _cl = cl;
 }
 
-QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* element)
+IUIAutomationElement* PropertyChangedEventHandler::findElement(IUIAutomationElement* element)
 {
     if(element == NULL)
     {
-        return "";
+        return NULL;
     }
 
     IUIAutomationCondition* hasKeyboardFocusCondition;
@@ -40,33 +38,33 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
     hr = _automation->CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, trueVar, &isTextPatternAvailable);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
     hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, falseVar, &notPassword);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
 
     _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
-        return "";
+        return NULL;
     }
 
     _automation->CreateAndCondition(textHasKeyboardFocus, notPassword, &searchCondition);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
-        return "";
+        return NULL;
     }
     else
     {
@@ -75,7 +73,7 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
         if (FAILED(hr))
         {
             qDebug() << "FindFirst failed";
-            return "";
+            return NULL;
         }
         else if (keyboardFocus == NULL)
         {
@@ -85,13 +83,21 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
         if (FAILED(hr))
         {
             qDebug() << "Failed to CreatePropertyCondition";
-            return "";
+            return NULL;
         }
     }
+    return keyboardFocus;
+}
+
+QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* element)
+{
+    if(element == NULL)
+    {
+        return "";
+    }
+
     VARIANT text;
-    hr = keyboardFocus->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
-    if(keyboardFocus != element)
-        keyboardFocus->Release();
+    HRESULT hr = element->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
     if (FAILED(hr))
     {
         qDebug() << "Failed to get element value.";
@@ -108,13 +114,8 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
 
 HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue)
 {
-    //qDebug() <<  getElementText(sender);
+    ((CorrectLayout*)_cl)->handleValueChange(getElementText(findElement(sender)));
     return S_OK;
-}
-
-PropertyChangedEventHandler::PropertyChangedEventHandler(IUIAutomation *automation)
-{
-     _automation = automation;
 }
 
 HRESULT PropertyChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)

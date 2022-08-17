@@ -15,6 +15,7 @@
 #include "UIAutomation.h"
 #include "llkeyhandler.h"
 #include "focuschangedeventhandler.h"
+#include "propertychangedeventhandler.h"
 
 struct LayoutSwitchSettings
 {
@@ -36,12 +37,9 @@ public:
     bool init();
     bool isRunning();
 
-    void handleKey(RAWKEYBOARD rk);
-    bool handleLlKey(int nCode, WPARAM wParam, LPARAM lParam);
-    void handleMouse(RAWMOUSE mouse);
     void windowSwitched(HWND hwnd);
 
-    QString getElementText(IUIAutomationElement* element);
+    void handleValueChange(QString newString);
 private:
     enum class SwitcherState {SEARCHING, WORKING, CHANGING, PAUSED, STOPED} _state;
 
@@ -51,20 +49,12 @@ private:
 
     void convertSelection();
     void convertCurrentWord(HKL layout, bool finished);
-    void checkLayout(const bool beforeKeyPress, const bool finished);
+    void checkLayout(const bool finished);
 
-    void addKeyToQueue(KeyPress kp);
-
-    void handleKeyAsync();
-    void startHandleKey();
-
-    IUIAutomationElement* getFocusedElement();
-    bool compareElements(IUIAutomationElement *element1, IUIAutomationElement *element2);
+    //void handleKeyAsync();
 
     LayoutController* _layoutController;
-    LlKeyHandler _llKeyHandler;
 
-    QVector<KeyPress> _keyPresses;
     QString _currentWord;
     QString _currentText;
     int _position;
@@ -79,7 +69,6 @@ private:
 
     uint _keyPressId;
     uint _keyLlPressId;
-    uint _mousePressId;
     uint _windowSwitchId;
 
     QQueue<KeyPress> _keyQueue;
@@ -87,8 +76,8 @@ private:
     QTimer timer;
 
     IUIAutomation *_automation;
-    //IUIAutomationElement *_currentElement;
     FocusChangedEventHandler* _fceh;
+    PropertyChangedEventHandler* _pceh;
 
     LayoutChecker _layoutChecker;
 
@@ -99,9 +88,6 @@ private:
     bool _running;
     bool _initialized;
     bool _exception;
-
-    QMutex _queueMutex;
-    QMutex _keyMutex;
 };
 
 #endif // CORRECTLAYOUT_H

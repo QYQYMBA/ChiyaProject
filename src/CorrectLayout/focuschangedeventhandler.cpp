@@ -4,11 +4,19 @@
 #include <atlsafe.h>
 #include "focuschangedeventhandler.h"
 
-QString FocusChangedEventHandler::getElementText(IUIAutomationElement* element)
+FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh)
+{
+    _pceh = pceh;
+    _automation = automation;
+    _keyboardFocus = NULL;
+    _elementChanged = true;
+}
+
+IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement* element)
 {
     if(element == NULL)
     {
-        return "";
+        return NULL;
     }
 
     IUIAutomationCondition* hasKeyboardFocusCondition;
@@ -27,33 +35,33 @@ QString FocusChangedEventHandler::getElementText(IUIAutomationElement* element)
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
     hr = _automation->CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, trueVar, &isTextPatternAvailable);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
     hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, falseVar, &notPassword);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreatePropertyCondition";
-        return "";
+        return NULL;
     }
 
     _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
-        return "";
+        return NULL;
     }
 
     _automation->CreateAndCondition(textHasKeyboardFocus, notPassword, &searchCondition);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
-        return "";
+        return NULL;
     }
     else
     {
@@ -62,7 +70,7 @@ QString FocusChangedEventHandler::getElementText(IUIAutomationElement* element)
         if (FAILED(hr))
         {
             qDebug() << "FindFirst failed";
-            return "";
+            return NULL;
         }
         else if (keyboardFocus == NULL)
         {
@@ -72,43 +80,18 @@ QString FocusChangedEventHandler::getElementText(IUIAutomationElement* element)
         if (FAILED(hr))
         {
             qDebug() << "Failed to CreatePropertyCondition";
-            return "";
+            return NULL;
         }
     }
-    VARIANT text;
-    hr = keyboardFocus->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
-    if(keyboardFocus != element)
-        keyboardFocus->Release();
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to get element value.";
-        return "";
-    }
-    if(SUCCEEDED(hr))
-    {
-        wchar_t* t = text.bstrVal;
-        QString s = QString::fromWCharArray(t);
-        return s;
-    }
-    return "";
+    return keyboardFocus;
 }
 
-FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation)
+bool FocusChangedEventHandler::elementChanged(bool reset)
 {
-    _sender = NULL;
-    _automation = automation;
-}
-
-QString FocusChangedEventHandler::getElementText()
-{
-    _elementChanged = false;
-    return getElementText(_sender);
-}
-
-bool FocusChangedEventHandler::elementChanged()
-{
-    _elementChanged = false;
-    return _elementChanged;
+    bool o = _elementChanged;
+    if (reset)
+        _elementChanged = false;
+    return o;
 }
 
 HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)
@@ -129,16 +112,22 @@ HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj
 
 HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *sender)
 {
-    if(_sender != NULL)
-        _sender->Release();
+    if (_keyboardFocus != NULL)
+    {
+        _automation->RemovePropertyChangedEventHandler(_keyboardFocus, (IUIAutomationPropertyChangedEventHandler*)_pceh);
+        _keyboardFocus->Release();
+    }
     _elementChanged = true;
-    _sender = sender;
+
+    _keyboardFocus = sender;
+    if(_keyboardFocus == NULL)
+        return S_FALSE;
+    _keyboardFocus->AddRef();
+
     CComSafeArray<PROPERTYID> sf(1);
     sf[0] = UIA_ValueValuePropertyId;
-    _pceh = new PropertyChangedEventHandler(_automation);
-    HRESULT hr = _automation->AddPropertyChangedEventHandler(_sender, TreeScope_Subtree, NULL, (IUIAutomationPropertyChangedEventHandler*)_pceh, sf);
-    hr = _automation->AddPropertyChangedEventHandler(_sender, TreeScope_Element, NULL, (IUIAutomationPropertyChangedEventHandler*)_pceh, sf);
-    _sender->AddRef();
+    _automation->AddPropertyChangedEventHandler(_keyboardFocus, TreeScope_Element, NULL, (IUIAutomationPropertyChangedEventHandler*)_pceh, sf);
+    //_automation->AddPropertyChangedEventHandler(_keyboardFocus, TreeScope_Subtree, NULL, (IUIAutomationPropertyChangedEventHandler*)_pceh, sf);
 
     return S_OK;
 }
