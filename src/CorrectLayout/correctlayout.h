@@ -14,6 +14,7 @@
 #include "layoutcontroller.h"
 #include "UIAutomation.h"
 #include "llkeyhandler.h"
+#include "focuschangedeventhandler.h"
 
 struct LayoutSwitchSettings
 {
@@ -39,6 +40,8 @@ public:
     bool handleLlKey(int nCode, WPARAM wParam, LPARAM lParam);
     void handleMouse(RAWMOUSE mouse);
     void windowSwitched(HWND hwnd);
+
+    QString getElementText(IUIAutomationElement* element);
 private:
     enum class SwitcherState {SEARCHING, WORKING, CHANGING, PAUSED, STOPED} _state;
 
@@ -56,7 +59,6 @@ private:
     void startHandleKey();
 
     IUIAutomationElement* getFocusedElement();
-    QString getElementText(IUIAutomationElement* element);
     bool compareElements(IUIAutomationElement *element1, IUIAutomationElement *element2);
 
     LayoutController* _layoutController;
@@ -85,7 +87,8 @@ private:
     QTimer timer;
 
     IUIAutomation *_automation;
-    IUIAutomationElement *_currentElement;
+    //IUIAutomationElement *_currentElement;
+    FocusChangedEventHandler* _fceh;
 
     LayoutChecker _layoutChecker;
 

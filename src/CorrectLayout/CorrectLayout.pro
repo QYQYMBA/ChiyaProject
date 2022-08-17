@@ -11,13 +11,17 @@ CONFIG += c++11
 
 SOURCES += \
     correctlayout.cpp \
+    focuschangedeventhandler.cpp \
     layoutchecker.cpp \
-    llkeyhandler.cpp
+    llkeyhandler.cpp \
+    propertychangedeventhandler.cpp
 
 HEADERS += \
     correctlayout.h \
+    focuschangedeventhandler.h \
     layoutchecker.h \
-    llkeyhandler.h
+    llkeyhandler.h \
+    propertychangedeventhandler.h
 
 LIBS += \
     -luser32 \
@@ -32,7 +36,10 @@ LIBS += \
     -luuid \
     -lodbc32 \
     -lodbccp32 \
-    -lUIAutomationCore
+    -lUIAutomationCore \
+    -lpropsys \
+    -lshlwapi \
+    -lws2_32
 
 
 # Default rules for deployment.

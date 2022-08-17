@@ -24,7 +24,7 @@ CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
     _initialized = false;
 
     _layoutController = layoutController;
-    _currentElement = NULL;
+    //_currentElement = NULL;
 
     _myHWND = hwnd;
 }
@@ -99,8 +99,8 @@ bool CorrectLayout::init()
     if(FAILED(hr))
         qDebug() << "Automation can not be initialized";
 
-    //fceh = new FocusChangedEventHandler(this, _automation);
-    //_automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)fceh);
+    _fceh = new FocusChangedEventHandler(_automation);
+    hr = _automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)_fceh);
 
     qDebug() << "Start loading dictionaries";
 
@@ -610,9 +610,9 @@ void CorrectLayout::handleKeyAsync()
         return;
     }
 
-    //IUIAutomationElement* newElement = getFocusedElement();
+    /*IUIAutomationElement* newElement = getFocusedElement();
     _currentElement = getFocusedElement();
-    /*if(_currentElement == NULL || !compareElements(_currentElement, newElement))
+    if(_currentElement == NULL || !compareElements(_currentElement, newElement))
     {
         if(_currentElement != NULL)
             _currentElement->Release();
@@ -621,12 +621,18 @@ void CorrectLayout::handleKeyAsync()
         _keyPresses.clear();
         _currentText = getElementText(_currentElement);
     }*/
+    if(_fceh->elementChanged())
+    {
+        _state = SwitcherState::SEARCHING;
+        _keyPresses.clear();
+        _currentText = _fceh->getElementText();
+    }
 
     if(_keyToProcess.getVkCode() == VK_RETURN)
     {
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
-        _currentText = getElementText(_currentElement);
+        _currentText = _fceh->getElementText();
         return;
     }
 
@@ -635,7 +641,7 @@ void CorrectLayout::handleKeyAsync()
         checkLayout(false, true);
         _state = SwitcherState::SEARCHING;
         _keyPresses.clear();
-        _currentText = getElementText(_currentElement);
+        _currentText = _fceh->getElementText();
         return;
     }
 
@@ -657,14 +663,14 @@ void CorrectLayout::handleKeyAsync()
         {
             _keyPresses.pop_back();
         }
-        _currentText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');
+        _currentText = _fceh->getElementText().replace('\n', ' ').replace('\r', ' ');
         return;
     }
 
     if(!_keyToProcess.isPrintable())
     {
         _keyPresses.push_back(_keyToProcess);
-        _currentText = getElementText(_currentElement);
+        _currentText = _fceh->getElementText();
         return;
     }
 
@@ -672,7 +678,7 @@ void CorrectLayout::handleKeyAsync()
 
     if(_layoutChecker.isKeyInDictionary(_keyToProcess.getVkCode()))
     {
-        QString newText = getElementText(_currentElement).replace('\n', ' ').replace('\r', ' ');
+        QString newText = _fceh->getElementText().replace('\n', ' ').replace('\r', ' ');
         QStringList oldWords = _currentText.split(' ');
         QStringList newWords = newText.split(' ');
         QStringList changedWords;
