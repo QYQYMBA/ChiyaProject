@@ -48,7 +48,7 @@ private:
     void getLayoutSettingsList();
 
     void convertSelection();
-    void convertCurrentWord(HKL layout, bool finished);
+    void convertCurrentWord(QString changedText);
     void checkLayout(const bool finished);
 
     //void handleKeyAsync();
@@ -88,6 +88,8 @@ private:
     bool _running;
     bool _initialized;
     bool _exception;
+
+    HKL _changeLayout;
 };
 
 #endif // CORRECTLAYOUT_H

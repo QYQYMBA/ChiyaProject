@@ -44,7 +44,7 @@ void LayoutChecker::load(const QString filename, const HKL layout)
         (*words)[line]++;
     }
 
-    qDebug() << "Log: " << "For this layout alphabet is " << _dictionaries[layout].first;
+    qDebug() << "Log: " << "For this layout alphabet is " << getAlphabet(layout);
 }
 
 void LayoutChecker::generateEdits(const QString& word, std::vector<QString>& result, const HKL layout)

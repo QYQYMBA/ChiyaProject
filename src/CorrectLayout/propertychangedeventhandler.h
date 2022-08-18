@@ -12,17 +12,20 @@ class PropertyChangedEventHandler : IUIAutomationPropertyChangedEventHandler
 public:
     PropertyChangedEventHandler(IUIAutomation* automation, void* _cl);
 
+    HRESULT updateText(IUIAutomationElement* element);
+
     HRESULT QueryInterface(REFIID riid, LPVOID *ppvObj);
     ULONG AddRef();
     ULONG Release();
-
-    QMutex mutex;
+    QString getText();
 private:
+    QString _oldText;
     void* _cl;
     ULONG _cRef;
     IUIAutomation* _automation;
     HRESULT HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue);
     IUIAutomationElement* findElement(IUIAutomationElement* element);
+    IUIAutomationElement* _lastElement;
     QString getElementText(IUIAutomationElement* element);
 };
 

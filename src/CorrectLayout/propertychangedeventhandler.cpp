@@ -11,8 +11,14 @@
 PropertyChangedEventHandler::PropertyChangedEventHandler(IUIAutomation *automation, void* cl)
 {
     _automation = automation;
-    mutex.lock();
     _cl = cl;
+    _lastElement = NULL;
+}
+
+HRESULT PropertyChangedEventHandler::updateText(IUIAutomationElement *element)
+{
+    VARIANT v;
+    return HandlePropertyChangedEvent(element, NULL, v);
 }
 
 IUIAutomationElement* PropertyChangedEventHandler::findElement(IUIAutomationElement* element)
@@ -114,7 +120,26 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
 
 HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue)
 {
-    ((CorrectLayout*)_cl)->handleValueChange(getElementText(findElement(sender)));
+    if (_lastElement != NULL)
+    {
+        _lastElement->Release();
+    }
+    _lastElement = sender;
+    if(_lastElement == NULL)
+        return S_FALSE;
+    HRESULT hr = _lastElement->AddRef();
+    if (FAILED(hr))
+    {
+        qDebug() << "Can't add reference";
+        return hr;
+    }
+
+    QString currentText = getElementText(_lastElement);
+    if (_oldText == currentText)
+        return S_FALSE;
+    else
+        _oldText = currentText;
+    ((CorrectLayout*)_cl)->handleValueChange(currentText);
     return S_OK;
 }
 
@@ -150,4 +175,9 @@ ULONG PropertyChangedEventHandler::Release()
             delete this;
         }
         return ulRefCount;
+}
+
+QString PropertyChangedEventHandler::getText()
+{
+    return getElementText(_lastElement);
 }
