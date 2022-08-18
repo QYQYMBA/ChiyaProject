@@ -112,7 +112,6 @@ HRESULT FocusChangedEventHandler::changeValue(QString newValue, int position)
         atr->Move(TextUnit_Character, position + 1, &moved);
         atr->Select();
     }
-    _keyboardFocus->SetFocus();
     return S_OK;
 }
 
