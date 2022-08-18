@@ -65,7 +65,6 @@ IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement
     }
     else
     {
-        IUIAutomationElementArray* keyboardFocusA = NULL;
         hr = element->FindFirst(TreeScope_Subtree, searchCondition, &keyboardFocus);
         searchCondition->Release();
         if (FAILED(hr))
@@ -97,42 +96,24 @@ bool FocusChangedEventHandler::elementChanged(bool reset)
 
 HRESULT FocusChangedEventHandler::changeValue(QString newValue, int position)
 {
+    if(_elementChanged)
+        return S_FALSE;
+
     BSTR bstrString;
+    int moved;
+    BOOL f;
     std::wstring w = newValue.toStdWString();
     bstrString = SysAllocString(w.c_str());
-    HRESULT hr = avp->SetValue(bstrString);
-    if (FAILED(hr))
+    avp->SetValue(bstrString);
+    atp->GetCaretRange(&f, &atr);
+    if (atr != NULL)
     {
-        qDebug() << "Can't set value";
-        return hr;
+        atr->Move(TextUnit_Character, -newValue.size(), &moved);
+        atr->Move(TextUnit_Character, position + 1, &moved);
+        atr->Select();
     }
-    BOOL f;
-    hr = atp->GetCaretRange(&f, &atr);
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't get caret range";
-        return hr;
-    }
-    int moved;
-    atr->Move(TextUnit_Character, -newValue.size(), &moved);
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't move range";
-        return hr;
-    }
-    atr->Move(TextUnit_Character, position + 1, &moved);
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't move range";
-        return hr;
-    }
-    atr->Select();
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't select range";
-        return hr;
-    }
-    return hr;
+    _keyboardFocus->SetFocus();
+    return S_OK;
 }
 
 HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)
@@ -153,6 +134,15 @@ HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj
 
 HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *sender)
 {
+    HWND hwnd = GetForegroundWindow();
+    if (hwnd == NULL) return false;
+
+    DWORD foregroundPid;
+    if (GetWindowThreadProcessId(hwnd, &foregroundPid) == 0) return false;
+
+    if (foregroundPid == GetCurrentProcessId())
+        return S_FALSE;
+
     HRESULT hr;
     if (_keyboardFocus != NULL)
     {

@@ -120,6 +120,7 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
 
 HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue)
 {
+    ((CorrectLayout*)_cl)->handleValueChange(getElementText(sender));
     if (_lastElement != NULL)
     {
         _lastElement->Release();
@@ -139,7 +140,6 @@ HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationEle
         return S_FALSE;
     else
         _oldText = currentText;
-    ((CorrectLayout*)_cl)->handleValueChange(currentText);
     return S_OK;
 }
 

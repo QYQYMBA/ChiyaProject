@@ -39,7 +39,6 @@ QString WinApiAdapter::GetWindowExeName(HWND hwnd)
     int lastSlash = path.lastIndexOf('\\');
     QString exeName = path.mid(lastSlash + 1, path.length() - lastSlash);
 
-    qDebug() << exeName;
     return exeName;
 }
 

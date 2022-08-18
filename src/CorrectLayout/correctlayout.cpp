@@ -275,12 +275,8 @@ void CorrectLayout::checkLayout(const bool finished)
 
 void CorrectLayout::handleValueChange(QString newText)
 {
-    HKL newLayout = _layoutController->getLayout();
-    if(newLayout != _lastLayout)
-    {
-        _state = SwitcherState::PAUSED;
-        _lastLayout = newLayout;
-    }
+    if(_exception)
+        return;
 
     if (_changeLayout != 0x0)
     {
@@ -299,6 +295,13 @@ void CorrectLayout::handleValueChange(QString newText)
         }
     }
     _changeLayout = 0x0;
+
+    HKL newLayout = _layoutController->getLayout();
+    if(newLayout != _lastLayout)
+    {
+        _state = SwitcherState::PAUSED;
+        _lastLayout = newLayout;
+    }
 
     newText = newText.replace('\n', ' ').replace('\r', ' ');
     int positionInText = 0;
