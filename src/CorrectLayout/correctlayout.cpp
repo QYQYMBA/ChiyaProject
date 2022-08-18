@@ -280,18 +280,23 @@ void CorrectLayout::handleValueChange(QString newText)
 
     if (_changeLayout != 0x0)
     {
-        int start = _position - _currentWord.size();
-        int end = newText.indexOf(' ', start);
-        if (end == -1)
-            end = newText.size();
-        QString changedWord = newText.mid(start, end-start);
-        _layoutChecker.changeWordLayout(changedWord, _changeLayout);
-        if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
+        if(_keyMutex.tryLock(50))
         {
-            QString changedText = newText.replace(start, end-start, changedWord);
-            _layoutController->switchLayout(_changeLayout);
-            convertCurrentWord(changedText);
-            _currentWord = changedWord;
+            int start = _position - _currentWord.size();
+            int end = newText.indexOf(' ', start);
+            if (end == -1)
+                end = newText.size();
+            QString changedWord = newText.mid(start, end-start);
+            _layoutChecker.changeWordLayout(changedWord, _changeLayout);
+            if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
+            {
+                QString changedText = newText.replace(start, end-start, changedWord);
+                _layoutController->switchLayout(_changeLayout);
+                convertCurrentWord(changedText);
+                _currentWord = changedWord;
+            }
+
+            _keyMutex.unlock();
         }
     }
     _changeLayout = 0x0;

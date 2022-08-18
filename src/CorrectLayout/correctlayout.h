@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QSettings>
+#include <QMutex>
 #include <QtConcurrent/QtConcurrent>
 
 #include "windows.h"
@@ -82,6 +83,7 @@ private:
     LayoutChecker _layoutChecker;
 
     QSettings _settings;
+    QMutex _keyMutex;
 
     HWND _myHWND;
 
