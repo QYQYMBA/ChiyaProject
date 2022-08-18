@@ -68,8 +68,6 @@ private:
 
     bool _whiteList;
 
-    uint _keyPressId;
-    uint _keyLlPressId;
     uint _windowSwitchId;
 
     QQueue<KeyPress> _keyQueue;
@@ -83,7 +81,6 @@ private:
     LayoutChecker _layoutChecker;
 
     QSettings _settings;
-    QMutex _keyMutex;
 
     HWND _myHWND;
 

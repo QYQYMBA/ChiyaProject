@@ -100,8 +100,8 @@ HRESULT FocusChangedEventHandler::changeValue(QString newValue, int position)
         return S_FALSE;
 
     BSTR bstrString;
-    int moved;
     BOOL f;
+    int moved;
     std::wstring w = newValue.toStdWString();
     bstrString = SysAllocString(w.c_str());
     avp->SetValue(bstrString);
