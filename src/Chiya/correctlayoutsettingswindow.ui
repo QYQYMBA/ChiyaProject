@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>3</number>
    </property>
    <widget class="QWidget" name="general">
     <attribute name="title">
@@ -91,6 +91,13 @@
        <height>16</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <pointsize>7</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="text">
       <string>Switch to this keyboard layout</string>
      </property>
@@ -106,6 +113,13 @@
        <width>165</width>
        <height>16</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>7</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
      </property>
      <property name="text">
       <string>Enable keboard layout</string>
@@ -252,6 +266,85 @@
       <rect>
        <x>220</x>
        <y>35</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="passwords">
+    <attribute name="title">
+     <string>Passwords</string>
+    </attribute>
+    <widget class="QCheckBox" name="pCapsLockCheckBoxCl">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>121</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Turn Caps off</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="pLayoutCheckBoxCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>91</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Change layout</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="pLabelCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>301</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Events that will aper when password field selected:</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="pLayoutComboBoxCl">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>131</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pApplyButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
        <width>75</width>
        <height>23</height>
       </rect>

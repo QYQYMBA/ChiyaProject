@@ -26,8 +26,8 @@ private:
     std::map<int, int> possibleKeys;
 
     QString getAlphabet(HKL layout);
-    QChar vkToChar(HKL layout, int vk);
-    int charToVk(HKL layout, QChar c);
+    QChar vkToChar(HKL layout, int vk, bool shift);
+    int charToVk(HKL layout, QChar c, bool* shift);
     void generateEdits(const QString& word, std::vector<QString>& result, const HKL layout);
     bool findPrefix(QString word, const HKL layout);
     int findWord(const QString& word, const HKL layout);

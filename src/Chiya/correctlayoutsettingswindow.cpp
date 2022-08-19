@@ -40,6 +40,11 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     connect(ui->eWhiteListCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
     connect(ui->eExceptionsPlainTextEditCl, SIGNAL (textChanged()), this, SLOT (handleEExceptionsChanged()));
 
+    connect(ui->pApplyButtonCl, SIGNAL (clicked()), this, SLOT (handlePApplyButton()));
+    connect(ui->pCapsLockCheckBoxCl, SIGNAL (clicked()), this, SLOT (handlePCapsLockCheckBox()));
+    connect(ui->pLayoutCheckBoxCl, SIGNAL (clicked()), this, SLOT (handlePLayoutCheckBox()));
+    connect(ui->pLayoutComboBoxCl, SIGNAL (currentIndexChanged()), this, SLOT (handlePLayoutComboBox()));
+
     setupLayoutsList();
 
     _tab = ui->mainTabs->currentIndex();
@@ -74,6 +79,8 @@ void CorrectLayoutSettingsWindow::setupLayoutsList()
 
     model->setStringList(list);
     ui->lsLayoutsListViewCl->setModel(model);
+    ui->pLayoutComboBoxCl->setModel(model);
+
     ui->lsLayoutsListViewCl->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(ui->lsLayoutsListViewCl->selectionModel(),
@@ -81,6 +88,16 @@ void CorrectLayoutSettingsWindow::setupLayoutsList()
           this, SLOT(handleLsSelectionChanged()));
 
     ui->lsLayoutsListViewCl->setCurrentIndex(model->index(0, 0));
+
+    QString layout = _settings.value("passwords/layout").toString();
+
+    for (int i = 0; i < _layoutsList.size(); i++)
+    {
+        if(WinApiAdapter::hklToStr(_layoutsList[i]) == layout)
+        {
+            ui->pLayoutComboBoxCl->setCurrentIndex(i);
+        }
+    }
 }
 
 void CorrectLayoutSettingsWindow::loadSettings()
@@ -91,6 +108,11 @@ void CorrectLayoutSettingsWindow::loadSettings()
 
     ui->eExceptionsPlainTextEditCl->appendPlainText(_settings.value("exceptions/blacklist").toString());
     ui->eWhiteListCheckBoxCl->setChecked(_settings.value("exceptions/isWhiteList").toBool());
+
+    ui->pCapsLockCheckBoxCl->setChecked(_settings.value("passwords/caplslock").toBool());
+    bool layoutChecked = _settings.value("passwords/layoutChecked").toBool();
+    ui->pLayoutCheckBoxCl->setChecked(layoutChecked);
+    ui->pLayoutComboBoxCl->setEnabled(layoutChecked);
 
     _gChanged = false;
     _lsChanged = false;
@@ -383,6 +405,34 @@ void CorrectLayoutSettingsWindow::handleEWhiteList()
 }
 
 void CorrectLayoutSettingsWindow::handleEExceptionsChanged()
+{
+    _eChanged = true;
+}
+
+void CorrectLayoutSettingsWindow::handlePApplyButton()
+{
+    _settings.setValue("passwords/caplslock", ui->pCapsLockCheckBoxCl->isChecked());
+    bool layoutChecked = ui->pLayoutCheckBoxCl->isChecked();
+    _settings.setValue("passwords/layoutChecked", layoutChecked);
+    if(layoutChecked)
+    {
+        int index = ui->pLayoutComboBoxCl->currentIndex();
+        _settings.setValue("passwords/layout", WinApiAdapter::hklToStr(_layoutsList[index]));
+    }
+}
+
+void CorrectLayoutSettingsWindow::handlePCapsLockCheckBox()
+{
+    _eChanged = true;
+}
+
+void CorrectLayoutSettingsWindow::handlePLayoutCheckBox()
+{
+    _eChanged = true;
+    ui->pLayoutComboBoxCl->setEnabled(!ui->pLayoutComboBoxCl->isEnabled());
+}
+
+void CorrectLayoutSettingsWindow::handlePLayoutComboBox()
 {
     _eChanged = true;
 }

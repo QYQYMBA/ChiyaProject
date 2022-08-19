@@ -43,6 +43,12 @@ bool CorrectLayout::startCl()
     _layoutsSettings.clear();
     _exceptions.clear();
 
+    _layoutsList = WinApiAdapter::getLayoutsList();
+
+    getLayoutSettingsList();
+
+    loadSettings();
+
     if(!_initialized)
     {
         if(!init())
@@ -50,10 +56,6 @@ bool CorrectLayout::startCl()
     }
 
     _lastLayout = _layoutController->getLayout();
-
-    getLayoutSettingsList();
-
-    loadSettings();
 
     _running = true;
 
@@ -96,30 +98,28 @@ bool CorrectLayout::init()
         qDebug() << "Automation can not be initialized";
 
     _pceh = new PropertyChangedEventHandler(_automation, this);
-    _fceh = new FocusChangedEventHandler(_automation, _pceh);
+    _fceh = new FocusChangedEventHandler(_automation, _pceh, _layoutController, _passwordCapsLock, _passwordNewLayout);
     hr = _automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)_fceh);
     if(FAILED(hr))
         qDebug() << "Focus changed event handler can't be added";
 
     qDebug() << "Start loading dictionaries";
 
-    std::vector<HKL> layoutsList = WinApiAdapter::getLayoutsList();
-
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
 
-    for (int i = 0; i < layoutsList.size(); i++)
+    for (int i = 0; i < _layoutsList.size(); i++)
     {
         wchar_t name[MAXNAMELENGTH];
-        LANGID language = (LANGID)(((UINT)layoutsList[i]) & 0x0000FFFF);
+        LANGID language = (LANGID)(((UINT)_layoutsList[i]) & 0x0000FFFF);
         LCID locale = MAKELCID(language, SORT_DEFAULT);
 
         GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
 
         qDebug() << "Start loading " << QString::fromWCharArray(name) << " dictionary";
 
-        QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(layoutsList[i]) + ".txt";
+        QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[i]) + ".txt";
         if (QFile::exists(path))
-            _layoutChecker.load(path, layoutsList[i]);
+            _layoutChecker.load(path, _layoutsList[i]);
         else
             qDebug() << "No dictionary file!";
         qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
@@ -190,6 +190,21 @@ void CorrectLayout::loadSettings()
 
     _exception = false;
     getExceptionsList();
+
+    _passwordCapsLock = _settings.value("passwords/layout").toBool();
+    _passwordLayout = _settings.value("passwords/layoutChecked").toBool();
+    _passwordNewLayout = 0x0;
+    if (_passwordLayout)
+    {
+        QString layout = _settings.value("passwords/layout").toString();
+        for (int i = 0; i < _layoutsList.size(); i++)
+        {
+            if(WinApiAdapter::hklToStr(_layoutsList[i]) == layout)
+            {
+                _passwordNewLayout = _layoutsList[i];
+            }
+        }
+    }
 }
 
 void CorrectLayout::getExceptionsList()

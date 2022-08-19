@@ -147,8 +147,6 @@ HKL LayoutChecker::checkLayout(const QString& word, const bool finished) {
 
         changeWordLayout(translatedWord, it->first);
 
-        std::string s = translatedWord.toStdString();
-
         if (findPrefix(translatedWord, it->first)) {
             return it->first;
         }
@@ -200,11 +198,11 @@ void LayoutChecker::changeWordLayout(QString& word, const HKL layout)
   const QString oldWord = word;
   HKL currentLayout = identifyLayout(oldWord);
   word = "";
+  bool shift = false;
   for (std::string::size_type i = 0; i < oldWord.length(); i++) {
-      int c = charToVk(currentLayout, oldWord[i]);
-      word += vkToChar(layout, c);
+      int c = charToVk(currentLayout, oldWord[i], &shift);
+      word += vkToChar(layout, c, shift);
   }
-  word = word.toLower();
 }
 
 bool LayoutChecker::isKeyInDictionary(int vkCode)
@@ -224,29 +222,43 @@ QString LayoutChecker::getAlphabet(HKL layout)
     return alphabet;
 }
 
-QChar LayoutChecker::vkToChar(HKL layout, int vk)
+QChar LayoutChecker::vkToChar(HKL layout, int vk, bool shift)
 {
-    return _dictionaries[layout].first.first[vk];
+    if (!shift)
+        return _dictionaries[layout].first.first[vk];
+    else
+        return _dictionaries[layout].first.second[vk];
 }
 
-int LayoutChecker::charToVk(HKL layout, QChar c)
+int LayoutChecker::charToVk(HKL layout, QChar c, bool* shift)
 {
-    c = c.toLower();
+    *shift = false;
     VkToChar vkToChar = _dictionaries[layout].first.first;
     for (auto it = vkToChar.begin(); it != vkToChar.end(); it++)
     {
         if (it->second == c)
             return it->first;
     }
+    vkToChar = _dictionaries[layout].first.second;
+    for (auto it = vkToChar.begin(); it != vkToChar.end(); it++)
+    {
+        if (it->second == c)
+        {
+            *shift = true;
+            return it->first;
+        }
+    }
     return -1;
 }
 
 bool LayoutChecker::findPrefix(QString word, const HKL layout) {
+    word = word.toLower();
+
     Dictionary* dictionary = &(_dictionaries.find(layout)->second);
     Words *words = &(dictionary->second);
 
     Words::const_iterator i = (*words).lower_bound(word);
-    while (i != (*words).end()) {
+    if (i != (*words).end()) {
         QString key = i->first;
         key = key.mid(0, word.length());
         if (key == word)

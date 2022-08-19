@@ -4,10 +4,14 @@
 #include <atlsafe.h>
 #include "focuschangedeventhandler.h"
 
-FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh)
+FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh, LayoutController* layoutController, bool passwordCapsLock, HKL passwordLayout)
 {
     _pceh = pceh;
     _automation = automation;
+    _layoutController = layoutController;
+    _passwordCapsLock = passwordCapsLock;
+    _passwordLayout = passwordLayout;
+
     _keyboardFocus = NULL;
     _elementChanged = true;
 }
@@ -22,8 +26,6 @@ IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement
     IUIAutomationCondition* hasKeyboardFocusCondition;
     IUIAutomationCondition* isTextPatternAvailable;
     IUIAutomationCondition* textHasKeyboardFocus;
-    IUIAutomationCondition* notPassword;
-    IUIAutomationCondition* searchCondition;
     IUIAutomationElement* keyboardFocus = NULL;
     VARIANT trueVar;
     trueVar.vt = VT_BOOL;
@@ -43,21 +45,7 @@ IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement
         qDebug() << "Failed to CreatePropertyCondition";
         return NULL;
     }
-    hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, falseVar, &notPassword);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        return NULL;
-    }
-
     _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreateAndCondition";
-        return NULL;
-    }
-
-    _automation->CreateAndCondition(textHasKeyboardFocus, notPassword, &searchCondition);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
@@ -65,8 +53,7 @@ IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement
     }
     else
     {
-        hr = element->FindFirst(TreeScope_Subtree, searchCondition, &keyboardFocus);
-        searchCondition->Release();
+        hr = element->FindFirst(TreeScope_Subtree, textHasKeyboardFocus, &keyboardFocus);
         if (FAILED(hr))
         {
             qDebug() << "FindFirst failed";
@@ -75,12 +62,6 @@ IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement
         else if (keyboardFocus == NULL)
         {
             keyboardFocus = element;
-        }
-        hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, trueVar, &notPassword);
-        if (FAILED(hr))
-        {
-            qDebug() << "Failed to CreatePropertyCondition";
-            return NULL;
         }
     }
     return keyboardFocus;
@@ -162,7 +143,28 @@ HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *
 
     _keyboardFocus = findElement(sender);
     if(_keyboardFocus == NULL)
+    {
         return S_FALSE;
+    }
+    else
+    {
+        if(_passwordCapsLock || _passwordLayout != 0x0)
+        {
+            VARIANT isPassword;
+            _keyboardFocus->GetCurrentPropertyValue(UIA_IsPasswordPropertyId, &isPassword);
+            if(isPassword.boolVal)
+            {
+                if(_passwordCapsLock)
+                {
+
+                }
+                if (_passwordLayout != 0x0)
+                {
+                    _layoutController->switchLayout(_passwordLayout);
+                }
+            }
+        }
+    }
     hr = _keyboardFocus->AddRef();
     if (FAILED(hr))
     {

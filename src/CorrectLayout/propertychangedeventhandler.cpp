@@ -121,6 +121,7 @@ QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* elemen
 HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue)
 {
     QString currentText = getElementText(sender);
+    qDebug() << currentText;
     if (_oldText == currentText)
         return S_FALSE;
     else

@@ -38,6 +38,11 @@ private slots:
     void handleEApplyButton();
     void handleEWhiteList();
     void handleEExceptionsChanged();
+
+    void handlePApplyButton();
+    void handlePCapsLockCheckBox();
+    void handlePLayoutCheckBox();
+    void handlePLayoutComboBox();
 private:
     void setupLayoutsList();
     void loadSettings();

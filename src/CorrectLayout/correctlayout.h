@@ -87,8 +87,12 @@ private:
     bool _running;
     bool _initialized;
     bool _exception;
+    bool _passwordCapsLock;
+    bool _passwordLayout;
+    HKL _passwordNewLayout;
 
     HKL _changeLayout;
+    std::vector<HKL> _layoutsList;
 };
 
 #endif // CORRECTLAYOUT_H
