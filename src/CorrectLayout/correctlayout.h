@@ -41,6 +41,7 @@ public:
     void windowSwitched(HWND hwnd);
 
     void handleValueChange(QString newString);
+    bool handleLlKey(int nCode, WPARAM wParam, LPARAM lParam);
 private:
     enum class SwitcherState {SEARCHING, WORKING, CHANGING, PAUSED, STOPED} _state;
 
@@ -67,6 +68,8 @@ private:
     QStringList _exceptions;
 
     bool _whiteList;
+
+    uint _keyLlPressId;
 
     uint _windowSwitchId;
 

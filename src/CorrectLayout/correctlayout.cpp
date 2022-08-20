@@ -90,7 +90,7 @@ bool CorrectLayout::init()
     qDebug() << "CorrectLayout initialization";
 
     CoInitialize(NULL);
-    HRESULT hr = CoCreateInstance(__uuidof(CUIAutomation), NULL,
+    HRESULT hr = CoCreateInstance(CLSID_CUIAutomation8, NULL,
                                   CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation),
                                   (void**)&_automation);
 
@@ -105,7 +105,10 @@ bool CorrectLayout::init()
 
     qDebug() << "Start loading dictionaries";
 
+    _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
+
 
     for (int i = 0; i < _layoutsList.size(); i++)
     {
@@ -280,6 +283,7 @@ void CorrectLayout::checkLayout(const bool finished)
         HKL layout = _layoutChecker.checkLayout(wordToCheck, finished);
         if (layout != nullptr && layout != _lastLayout) {
             _changeLayout = layout;
+            _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
         }
         else
         {
@@ -293,30 +297,14 @@ void CorrectLayout::handleValueChange(QString newText)
     if(_exception)
         return;
 
-    if (_changeLayout != 0x0)
-    {
-        int start = _position - _currentWord.size();
-        int end = newText.indexOf(' ', start);
-        if (end == -1)
-            end = newText.size();
-        QString changedWord = newText.mid(start, end-start);
-        _layoutChecker.changeWordLayout(changedWord, _changeLayout);
-        if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
-        {
-            QString changedText = newText.replace(start, end-start, changedWord);
-            _layoutController->switchLayout(_changeLayout);
-            convertCurrentWord(changedText);
-            _currentWord = changedWord;
-        }
-    }
-    _changeLayout = 0x0;
-
     HKL newLayout = _layoutController->getLayout();
     if(newLayout != _lastLayout)
     {
         _state = SwitcherState::PAUSED;
         _lastLayout = newLayout;
     }
+
+    _changeLayout = 0x0;
 
     newText = newText.replace('\n', ' ').replace('\r', ' ');
     int positionInText = 0;
@@ -383,4 +371,35 @@ void CorrectLayout::handleValueChange(QString newText)
     }
 
     _currentText = newText;
+}
+
+bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    PKBDLLHOOKSTRUCT key = (PKBDLLHOOKSTRUCT) lParam;
+
+    if (key != nullptr) {
+        unsigned long vkCode = key->vkCode;
+        if(_layoutChecker.vkToChar(_changeLayout, vkCode, false) != NULL)
+            if (!_fceh->elementChanged(false) && _changeLayout != 0x0)
+            {
+                int start = _position - _currentWord.size();
+                int end = _currentText.indexOf(' ', start);
+                if (end == -1)
+                    end = _currentText.size();
+                QString changedWord = _currentText.mid(start, end-start);
+                _layoutChecker.changeWordLayout(changedWord, _changeLayout);
+                if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
+                {
+                    QString changedText = _currentText.replace(start, end-start, changedWord);
+                    _layoutController->switchLayout(_changeLayout);
+                    convertCurrentWord(changedText);
+                    _currentWord = changedWord;
+                }
+            }
+    }
+
+    _changeLayout = 0x0;
+    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
+
+    return false;
 }
