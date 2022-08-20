@@ -42,7 +42,7 @@ public:
 
     void handleValueChange(QString newString);
     bool handleLlKey(int nCode, WPARAM wParam, LPARAM lParam);
-    void CorrectLayout::handleMouse(RAWMOUSE mouse)
+    void handleMouse(RAWMOUSE mouse)
 private:
     enum class SwitcherState {SEARCHING, WORKING, CHANGING, PAUSED, STOPED} _state;
 
