@@ -105,6 +105,7 @@ bool CorrectLayout::init()
 
     qDebug() << "Start loading dictionaries";
 
+    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
     _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
     QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
@@ -402,4 +403,10 @@ bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
     QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
 
     return false;
+}
+
+void CorrectLayout::handleMouse(RAWMOUSE mouse)
+{
+    _changeLayout = 0x0;
+    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
 }
