@@ -205,6 +205,91 @@ void WinApiAdapter::SendKeyPress(int vkCode, bool shift, bool ctrl, bool alt)
 
 }
 
+void WinApiAdapter::ReplaceUnicodeString(QString s)
+{
+    INPUT* inputs = new INPUT[s.size()*4];
+    int i = 0;
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = 0;
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = VK_BACK;
+        inputs[i].ki.dwFlags = 0;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = c.unicode();
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = 0;
+        inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+
+    SendInput(s.size()*4, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
+void WinApiAdapter::SendUnicodeString(QString s)
+{
+    INPUT* inputs = new INPUT[s.size()*2];
+    int i = 0;
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = c.unicode();
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = 0;
+        inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+
+    SendInput(s.size()*2, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
+void WinApiAdapter::SendUnicodeChar(QChar c)
+{
+    INPUT* inputs = new INPUT[2];
+    int i = 0;
+
+    inputs[i].type = INPUT_KEYBOARD;
+    inputs[i].ki.wScan = c.unicode();
+    inputs[i].ki.time = 0;
+    inputs[i].ki.dwExtraInfo = 0;
+
+    inputs[i].ki.wVk = 0;
+    inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+    i++;
+
+    inputs[i] = inputs[i-1];
+    inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+    i++;
+
+    SendInput(2, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
 void WinApiAdapter::SendKeyPress(KeyPress kp)
 {
     INPUT down = MakeKeyInput(kp.getVkCode(), true);

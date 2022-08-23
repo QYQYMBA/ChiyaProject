@@ -14,9 +14,8 @@
 #include "keypress.h"
 #include "layoutcontroller.h"
 #include "UIAutomation.h"
-#include "llkeyhandler.h"
 #include "focuschangedeventhandler.h"
-#include "propertychangedeventhandler.h"
+#include "automationeventhandle.h"
 
 struct LayoutSwitchSettings
 {
@@ -51,7 +50,7 @@ private:
     void getLayoutSettingsList();
 
     void convertSelection();
-    void convertCurrentWord(QString changedText);
+    void convertCurrentWord(QString word);
     void checkLayout(const bool finished);
 
     //void handleKeyAsync();
@@ -71,7 +70,7 @@ private:
     bool _whiteList;
 
     uint _keyLlPressId;
-
+    uint _mousePressId;
     uint _windowSwitchId;
 
     QQueue<KeyPress> _keyQueue;
@@ -80,7 +79,7 @@ private:
 
     IUIAutomation *_automation;
     FocusChangedEventHandler* _fceh;
-    PropertyChangedEventHandler* _pceh;
+    AutomationEventHandle* _aeh;
 
     LayoutChecker _layoutChecker;
 

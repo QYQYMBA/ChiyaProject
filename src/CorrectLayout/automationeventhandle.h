@@ -1,5 +1,5 @@
-#ifndef PROPERTYCHANGEDEVENTHANDLER_H
-#define PROPERTYCHANGEDEVENTHANDLER_H
+#ifndef AUTOMATIONEVENTHANDLE_H
+#define AUTOMATIONEVENTHANDLE_H
 
 #include "UIAutomationClient.h"
 #include "UIAutomationCore.h"
@@ -7,10 +7,10 @@
 #include "QString"
 #include "QMutex"
 
-class PropertyChangedEventHandler : IUIAutomationPropertyChangedEventHandler
+class AutomationEventHandle : IUIAutomationEventHandler
 {
 public:
-    PropertyChangedEventHandler(IUIAutomation* automation, void* _cl);
+    AutomationEventHandle(IUIAutomation* automation, void* _cl);
 
     HRESULT updateText(IUIAutomationElement* element);
 
@@ -23,10 +23,10 @@ private:
     void* _cl;
     ULONG _cRef;
     IUIAutomation* _automation;
-    HRESULT HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue);
+    HRESULT HandleAutomationEvent(IUIAutomationElement *sender, EVENTID eventId);
     IUIAutomationElement* findElement(IUIAutomationElement* element);
     IUIAutomationElement* _lastElement;
     QString getElementText(IUIAutomationElement* element);
 };
 
-#endif // PROPERTYCHANGEDEVENTHANDLER_H
+#endif // AUTOMATIONEVENTHANDLE_H

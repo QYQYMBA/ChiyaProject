@@ -31,6 +31,9 @@ public:
     static HKL GetLayoutByHwnd(HWND hwnd);
     static HKL GetLayout();
 
+    static void ReplaceUnicodeString(QString s);
+    static void SendUnicodeString(QString s);
+    static void SendUnicodeChar(QChar c);
     static void SendKeyPress(int vkCode, bool shift = false, bool ctrl = false, bool alt = false);
     static void SendKeyPress(KeyPress kp);
     static void SendKeyPresses(QVector<KeyPress> keyPresses);

@@ -7,14 +7,13 @@
 #include "UIAutomationCoreApi.h"
 #include "QString"
 #include "layoutcontroller.h"
-#include "propertychangedeventhandler.h"
+#include "automationeventhandle.h"
 
 class FocusChangedEventHandler : IUIAutomationFocusChangedEventHandler
 {
 public:
-    FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh, LayoutController* layoutController, bool passwordCapsLock = false, HKL passwordLayout = 0x0);
+    FocusChangedEventHandler(IUIAutomation* automation, AutomationEventHandle* pceh, LayoutController* layoutController, bool passwordCapsLock = false, HKL passwordLayout = 0x0);
     bool elementChanged(bool reset);
-    HRESULT changeValue(QString newValue, int position);
 
     HRESULT QueryInterface(REFIID riid, LPVOID *ppvObj);
     ULONG AddRef();
@@ -23,18 +22,13 @@ private:
     bool _passwordCapsLock;
     HKL _passwordLayout;
 
-    PropertyChangedEventHandler* _pceh;
+    AutomationEventHandle* _aeh;
     bool _elementChanged;
     ULONG _cRef;
     IUIAutomation* _automation;
     IUIAutomationElement* _keyboardFocus;
     LayoutController* _layoutController;
 
-    IUIAutomationLegacyIAccessiblePattern* avp;
-    IUIAutomationTextPattern2* atp;
-    IUIAutomationTextRange* atr;
-
-    IUIAutomationElement* findElement(IUIAutomationElement* element);
     HRESULT HandleFocusChangedEvent(IUIAutomationElement *sender);
 };
 

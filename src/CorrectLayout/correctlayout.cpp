@@ -97,8 +97,8 @@ bool CorrectLayout::init()
     if(FAILED(hr))
         qDebug() << "Automation can not be initialized";
 
-    _pceh = new PropertyChangedEventHandler(_automation, this);
-    _fceh = new FocusChangedEventHandler(_automation, _pceh, _layoutController, _passwordCapsLock, _passwordNewLayout);
+    _aeh = new AutomationEventHandle(_automation, this);
+    _fceh = new FocusChangedEventHandler(_automation, _aeh, _layoutController, _passwordCapsLock, _passwordNewLayout);
     hr = _automation->AddFocusChangedEventHandler(NULL, (IUIAutomationFocusChangedEventHandler*)_fceh);
     if(FAILED(hr))
         qDebug() << "Focus changed event handler can't be added";
@@ -272,9 +272,10 @@ void CorrectLayout::getLayoutSettingsList()
     }
 }
 
-void CorrectLayout::convertCurrentWord(QString changedText)
+void CorrectLayout::convertCurrentWord(QString word)
 {
-    _fceh->changeValue(changedText, _position);
+   _layoutChecker.changeWordLayout(word, _changeLayout);
+   WinApiAdapter::ReplaceUnicodeString(word);
 }
 
 void CorrectLayout::checkLayout(const bool finished)
@@ -283,8 +284,17 @@ void CorrectLayout::checkLayout(const bool finished)
         QString wordToCheck = _currentWord;
         HKL layout = _layoutChecker.checkLayout(wordToCheck, finished);
         if (layout != nullptr && layout != _lastLayout) {
-            _changeLayout = layout;
-            _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+            int start = _position - _currentWord.size();
+            int end = _currentText.indexOf(' ', start);
+            if (end == -1)
+                end = _currentText.size();
+            QString changedWord = _currentText.mid(start, end-start);
+            _layoutChecker.changeWordLayout(changedWord, _changeLayout);
+            if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
+            {
+                _changeLayout = layout;
+                _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+            }
         }
         else
         {
@@ -377,6 +387,7 @@ void CorrectLayout::handleValueChange(QString newText)
 bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
 {
     PKBDLLHOOKSTRUCT key = (PKBDLLHOOKSTRUCT) lParam;
+    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
 
     if (key != nullptr) {
         unsigned long vkCode = key->vkCode;
@@ -388,20 +399,13 @@ bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
                 if (end == -1)
                     end = _currentText.size();
                 QString changedWord = _currentText.mid(start, end-start);
-                _layoutChecker.changeWordLayout(changedWord, _changeLayout);
-                if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
-                {
-                    QString changedText = _currentText.replace(start, end-start, changedWord);
-                    _layoutController->switchLayout(_changeLayout);
-                    convertCurrentWord(changedText);
-                    _currentWord = changedWord;
-                }
+                _layoutController->switchLayout(_changeLayout);
+                convertCurrentWord(changedWord);
+                _currentWord = changedWord;
             }
     }
 
     _changeLayout = 0x0;
-    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
-
     return false;
 }
 

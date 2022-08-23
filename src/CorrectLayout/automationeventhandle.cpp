@@ -1,4 +1,4 @@
-#include "propertychangedeventhandler.h"
+#include "automationeventhandle.h"
 #include "correctlayout.h"
 
 #include "QtDebug"
@@ -8,20 +8,19 @@
 #include <tuple>
 #include <propvarutil.h>
 
-PropertyChangedEventHandler::PropertyChangedEventHandler(IUIAutomation *automation, void* cl)
+AutomationEventHandle::AutomationEventHandle(IUIAutomation *automation, void* cl)
 {
     _automation = automation;
     _cl = cl;
     _lastElement = NULL;
 }
 
-HRESULT PropertyChangedEventHandler::updateText(IUIAutomationElement *element)
+HRESULT AutomationEventHandle::updateText(IUIAutomationElement *element)
 {
-    VARIANT v;
-    return HandlePropertyChangedEvent(element, NULL, v);
+    return HandleAutomationEvent(element, NULL);
 }
 
-IUIAutomationElement* PropertyChangedEventHandler::findElement(IUIAutomationElement* element)
+IUIAutomationElement* AutomationEventHandle::findElement(IUIAutomationElement* element)
 {
     if(element == NULL)
     {
@@ -95,33 +94,42 @@ IUIAutomationElement* PropertyChangedEventHandler::findElement(IUIAutomationElem
     return keyboardFocus;
 }
 
-QString PropertyChangedEventHandler::getElementText(IUIAutomationElement* element)
+QString AutomationEventHandle::getElementText(IUIAutomationElement* element)
 {
     if(element == NULL)
     {
         return "";
     }
 
-    VARIANT text;
-    HRESULT hr = element->GetCurrentPropertyValue(UIA_ValueValuePropertyId ,&text);
-    if (FAILED(hr))
+    IUIAutomationTextPattern* atp;
+    IUIAutomationTextRange* atr;
+    BSTR bstr;
+    QString str = "";
+    HRESULT hr = element->GetCurrentPattern(UIA_TextPatternId, (IUnknown**)&atp);
+    if (FAILED(hr) || atp == NULL)
     {
-        qDebug() << "Failed to get element value.";
+        qDebug() << "Failed to get text pattern.";
         return "";
     }
-    if(SUCCEEDED(hr))
+    atp->get_DocumentRange(&atr);
+    if (FAILED(hr))
     {
-        wchar_t* t = text.bstrVal;
-        QString s = QString::fromWCharArray(t);
-        return s;
+        qDebug() << "Failed to get document range.";
+        return "";
     }
-    return "";
+    atr->GetText(300, &bstr);
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to get element text.";
+        return "";
+    }
+    str = QString::fromStdWString(bstr);
+    return str;
 }
 
-HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationElement *sender, PROPERTYID propertyId, VARIANT newValue)
+HRESULT AutomationEventHandle::HandleAutomationEvent(IUIAutomationElement *sender, EVENTID eventId)
 {
     QString currentText = getElementText(sender);
-    qDebug() << currentText;
     if (_oldText == currentText)
         return S_FALSE;
     else
@@ -145,13 +153,13 @@ HRESULT PropertyChangedEventHandler::HandlePropertyChangedEvent(IUIAutomationEle
     return S_OK;
 }
 
-HRESULT PropertyChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)
+HRESULT AutomationEventHandle::QueryInterface(const IID &riid, LPVOID *ppvObj)
 {
     // Always set out parameter to NULL, validating it first.
         if (!ppvObj)
             return E_INVALIDARG;
         *ppvObj = NULL;
-        if (riid == IID_IUnknown || riid == IID_IUIAutomationPropertyChangedEventHandler)
+        if (riid == IID_IUnknown || riid == IID_IUIAutomationEventHandler)
         {
             // Increment the reference count and return the pointer.
             *ppvObj = (LPVOID)this;
@@ -162,13 +170,13 @@ HRESULT PropertyChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppv
 }
 
 
-ULONG PropertyChangedEventHandler::AddRef()
+ULONG AutomationEventHandle::AddRef()
 {
     InterlockedIncrement(&_cRef);
     return _cRef;
 }
 
-ULONG PropertyChangedEventHandler::Release()
+ULONG AutomationEventHandle::Release()
 {
     // Decrement the object's internal counter.
         ULONG ulRefCount = InterlockedDecrement(&_cRef);
@@ -179,7 +187,7 @@ ULONG PropertyChangedEventHandler::Release()
         return ulRefCount;
 }
 
-QString PropertyChangedEventHandler::getText()
+QString AutomationEventHandle::getText()
 {
     return getElementText(_lastElement);
 }

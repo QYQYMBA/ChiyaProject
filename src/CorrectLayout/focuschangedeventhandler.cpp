@@ -4,9 +4,9 @@
 #include <atlsafe.h>
 #include "focuschangedeventhandler.h"
 
-FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, PropertyChangedEventHandler* pceh, LayoutController* layoutController, bool passwordCapsLock, HKL passwordLayout)
+FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, AutomationEventHandle* pceh, LayoutController* layoutController, bool passwordCapsLock, HKL passwordLayout)
 {
-    _pceh = pceh;
+    _aeh = pceh;
     _automation = automation;
     _layoutController = layoutController;
     _passwordCapsLock = passwordCapsLock;
@@ -16,84 +16,12 @@ FocusChangedEventHandler::FocusChangedEventHandler(IUIAutomation* automation, Pr
     _elementChanged = true;
 }
 
-IUIAutomationElement* FocusChangedEventHandler::findElement(IUIAutomationElement* element)
-{
-    if(element == NULL)
-    {
-        return NULL;
-    }
-
-    IUIAutomationCondition* hasKeyboardFocusCondition;
-    IUIAutomationCondition* isTextPatternAvailable;
-    IUIAutomationCondition* textHasKeyboardFocus;
-    IUIAutomationElement* keyboardFocus = NULL;
-    VARIANT trueVar;
-    trueVar.vt = VT_BOOL;
-    trueVar.boolVal = VARIANT_TRUE;
-    VARIANT falseVar;
-    falseVar.vt = VT_BOOL;
-    falseVar.boolVal = VARIANT_FALSE;
-    HRESULT hr = _automation->CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, trueVar, &hasKeyboardFocusCondition);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        return NULL;
-    }
-    hr = _automation->CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, trueVar, &isTextPatternAvailable);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreatePropertyCondition";
-        return NULL;
-    }
-    _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
-    if (FAILED(hr))
-    {
-        qDebug() << "Failed to CreateAndCondition";
-        return NULL;
-    }
-    else
-    {
-        hr = element->FindFirst(TreeScope_Subtree, textHasKeyboardFocus, &keyboardFocus);
-        if (FAILED(hr))
-        {
-            qDebug() << "FindFirst failed";
-            return NULL;
-        }
-        else if (keyboardFocus == NULL)
-        {
-            keyboardFocus = element;
-        }
-    }
-    return keyboardFocus;
-}
-
 bool FocusChangedEventHandler::elementChanged(bool reset)
 {
     bool o = _elementChanged;
     if (reset)
         _elementChanged = false;
     return o;
-}
-
-HRESULT FocusChangedEventHandler::changeValue(QString newValue, int position)
-{
-    if(_elementChanged)
-        return S_FALSE;
-
-    BSTR bstrString;
-    BOOL f;
-    int moved;
-    std::wstring w = newValue.toStdWString();
-    bstrString = SysAllocString(w.c_str());
-    avp->SetValue(bstrString);
-    atp->GetCaretRange(&f, &atr);
-    if (atr != NULL)
-    {
-        atr->Move(TextUnit_Character, -newValue.size(), &moved);
-        atr->Move(TextUnit_Character, position + 1, &moved);
-        atr->Select();
-    }
-    return S_OK;
 }
 
 HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)
@@ -126,7 +54,8 @@ HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *
     HRESULT hr;
     if (_keyboardFocus != NULL)
     {
-        hr = _automation->RemovePropertyChangedEventHandler(_keyboardFocus, (IUIAutomationPropertyChangedEventHandler*)_pceh);
+        hr = _automation->RemoveAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, (IUIAutomationEventHandler*)_aeh);
+
         if (FAILED(hr))
         {
             qDebug() << "Can't remove event handler";
@@ -141,7 +70,7 @@ HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *
     }
     _elementChanged = true;
 
-    _keyboardFocus = findElement(sender);
+    _keyboardFocus = sender;
     if(_keyboardFocus == NULL)
     {
         return S_FALSE;
@@ -172,28 +101,13 @@ HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *
         return hr;
     }
 
-    hr = _keyboardFocus->GetCurrentPattern(UIA_LegacyIAccessiblePatternId, (IUnknown**)&avp);
+    hr = _automation->AddAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, TreeScope_Subtree, NULL, (IUIAutomationEventHandler*)_aeh);
     if (FAILED(hr))
     {
-        qDebug() << "Can't get current LegacyIAccessiblePattern";
+        qDebug() << "Can't add property automation event handler";
         return hr;
     }
-    hr = _keyboardFocus->GetCurrentPattern(UIA_TextPattern2Id, (IUnknown**)&atp);
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't get current TextPattern2";
-        return hr;
-    }
-
-    CComSafeArray<PROPERTYID> sf(1);
-    sf[0] = UIA_ValueValuePropertyId;
-    hr = _automation->AddPropertyChangedEventHandler(_keyboardFocus, TreeScope_Subtree, NULL, (IUIAutomationPropertyChangedEventHandler*)_pceh, sf);
-    if (FAILED(hr))
-    {
-        qDebug() << "Can't add property changed event handler";
-        return hr;
-    }
-    _pceh->updateText(_keyboardFocus);
+    _aeh->updateText(_keyboardFocus);
 
     return S_OK;
 }
