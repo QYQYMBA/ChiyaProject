@@ -264,6 +264,14 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
         _settings.setValue("layouts/" + itemText + "/shortcut/activate/qtCode", _shortcutActivateKey->scanCode);
         _settings.setValue("layouts/" + itemText + "/shortcut/activate/vkCode", _shortcutActivateKey->vkCode);
     }
+    else
+    {
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/ctrl");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/shift");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/alt");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/qtCode");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/vkCode");
+    }
 
     _settings.setValue("layouts/" + itemText + "/shortcut/select/active", _shortcutSelectKey->vkCode != 0);
     if(_shortcutSelectKey->vkCode != 0)
@@ -273,6 +281,14 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
         _settings.setValue("layouts/" + itemText + "/shortcut/select/alt", _shortcutSelectKey->alt);
         _settings.setValue("layouts/" + itemText + "/shortcut/select/qtCode", _shortcutSelectKey->scanCode);
         _settings.setValue("layouts/" + itemText + "/shortcut/select/vkCode", _shortcutSelectKey->vkCode);
+    }
+    else
+    {
+        _settings.remove("layouts/" + itemText + "/shortcut/select/ctrl");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/shift");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/alt");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/qtCode");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/vkCode");
     }
 }
 

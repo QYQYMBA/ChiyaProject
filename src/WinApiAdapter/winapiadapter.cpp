@@ -112,8 +112,10 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 
             if(QString::fromWCharArray(name) == order[i])
             {
+                if (layoutsList[j] == 0x0)
+                    break;
                 list.push_back(layoutsList[j]);
-                layoutsList[j] = 0;
+                layoutsList[j] = 0x0;
                 break;
             }
         }
@@ -121,7 +123,7 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 
     for(int i = 0; i < n; i++)
     {
-        if(layoutsList[i] != 0)
+        if(layoutsList[i] != 0x0)
         {
             list.push_back(layoutsList[i]);
         }

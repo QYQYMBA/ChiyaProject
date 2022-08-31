@@ -18,6 +18,7 @@ public:
     ULONG AddRef();
     ULONG Release();
     QString getText();
+    QString getSelection();
 private:
     QString _oldText;
     void* _cl;
@@ -26,6 +27,8 @@ private:
     HRESULT HandleAutomationEvent(IUIAutomationElement *sender, EVENTID eventId);
     IUIAutomationElement* findElement(IUIAutomationElement* element);
     IUIAutomationElement* _lastElement;
+    IUIAutomationElement* _keyboardFocus;
+    QString getElementSelection(IUIAutomationElement* element);
     QString getElementText(IUIAutomationElement* element);
 };
 

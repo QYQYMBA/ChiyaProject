@@ -13,7 +13,7 @@ const int MAXNAMELENGTH = 30;
 
 CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
     : timer(),
-      _layoutChecker()
+      _layoutChecker(layoutController)
 {
     _settings.beginGroup("CorrectLayout");
 
@@ -23,6 +23,8 @@ CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
     _layoutController = layoutController;
     _myHWND = hwnd;
     _changeLayout = 0x0;
+    _oldLayout = 0x0;
+    _position = -1;
 }
 
 CorrectLayout::~CorrectLayout()
@@ -54,6 +56,11 @@ bool CorrectLayout::startCl()
         if(!init())
             return false;
     }
+    else
+    {
+        if(!reinitialize())
+            return false;
+    }
 
     _lastLayout = _layoutController->getLayout();
 
@@ -77,9 +84,8 @@ bool CorrectLayout::stopCl()
 
 bool CorrectLayout::reinitialize()
 {
-    _layoutChecker = LayoutChecker();
-    _initialized = false;
-    return init();
+    _layoutChecker = LayoutChecker(_layoutController);
+    return loadDictionaries();
 }
 
 bool CorrectLayout::init()
@@ -105,33 +111,19 @@ bool CorrectLayout::init()
 
     qDebug() << "Start loading dictionaries";
 
+    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonUp, &CorrectLayout::handleKey, this, true);
     _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
     _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
     QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
 
-
-    for (int i = 0; i < _layoutsList.size(); i++)
-    {
-        wchar_t name[MAXNAMELENGTH];
-        LANGID language = (LANGID)(((UINT)_layoutsList[i]) & 0x0000FFFF);
-        LCID locale = MAKELCID(language, SORT_DEFAULT);
-
-        GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
-
-        qDebug() << "Start loading " << QString::fromWCharArray(name) << " dictionary";
-
-        QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[i]) + ".txt";
-        if (QFile::exists(path))
-            _layoutChecker.load(path, _layoutsList[i]);
-        else
-            qDebug() << "No dictionary file!";
-        qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
-    }
-
-    qDebug() << "Finish loading dictionaries";
-
     _initialized = true;
+
+    if(!loadDictionaries())
+    {
+        qDebug() << "Can't load all dictionaries";
+        return false;
+    }
 
     qDebug() << "Initialization finished successfully";
 
@@ -209,6 +201,54 @@ void CorrectLayout::loadSettings()
             }
         }
     }
+
+    if(_settings.value("shortcuts/shortcut/pause/active").toBool())
+    {
+        Key key;
+        key.vkCode = _settings.value("shortcuts/shortcut/pause/vkCode").toInt();
+        key.ctrl = _settings.value("shortcuts/shortcut/pause/ctrl").toBool();
+        key.shift = _settings.value("shortcuts/shortcut/pause/shift").toBool();
+        key.alt = _settings.value("shortcuts/shortcut/pause/alt").toBool();
+        _shortcutPause = key;
+    }
+    else
+    {
+        Key key;
+        key.vkCode = 0;
+        _shortcutPause = key;
+    }
+
+    if(_settings.value("shortcuts/shortcut/next/active").toBool())
+    {
+        Key key;
+        key.vkCode = _settings.value("shortcuts/shortcut/next/vkCode").toInt();
+        key.ctrl = _settings.value("shortcuts/shortcut/next/ctrl").toBool();
+        key.shift = _settings.value("shortcuts/shortcut/next/shift").toBool();
+        key.alt = _settings.value("shortcuts/shortcut/next/alt").toBool();
+        _shortcutNext = key;
+    }
+    else
+    {
+        Key key;
+        key.vkCode = 0;
+        _shortcutNext = key;
+    }
+
+    if(_settings.value("shortcuts/shortcut/undo/active").toBool())
+    {
+        Key key;
+        key.vkCode = _settings.value("shortcuts/shortcut/undo/vkCode").toInt();
+        key.ctrl = _settings.value("shortcuts/shortcut/undo/ctrl").toBool();
+        key.shift = _settings.value("shortcuts/shortcut/undo/shift").toBool();
+        key.alt = _settings.value("shortcuts/shortcut/undo/alt").toBool();
+        _shortcutUndo = key;
+    }
+    else
+    {
+        Key key;
+        key.vkCode = 0;
+        _shortcutUndo = key;
+    }
 }
 
 void CorrectLayout::getExceptionsList()
@@ -228,10 +268,12 @@ void CorrectLayout::getLayoutSettingsList()
     {
         if(layoutsList[i] != 0)
         {
-            LayoutSwitchSettings ls;
+            LayoutCorrectionSettings ls;
 
             QString layout = WinApiAdapter::hklToStr(layoutsList[i]);
             ls.active = !_settings.value("layouts/" +layout + "/deactivated").toBool();
+            ls.check = _settings.value("layouts/" +layout + "/auto", true).toBool();
+
 
             ls.layout = layoutsList[i];
 
@@ -272,25 +314,79 @@ void CorrectLayout::getLayoutSettingsList()
     }
 }
 
-void CorrectLayout::convertCurrentWord(QString word)
+void CorrectLayout::convertSelection(HKL switchToLayout)
 {
-   _layoutChecker.changeWordLayout(word, _changeLayout);
-   WinApiAdapter::ReplaceUnicodeString(word);
+    QString selection = _aeh->getSelection();
+
+    if(switchToLayout != 0)
+    {
+        _layoutController->switchLayout(switchToLayout);
+    }
+    else
+    {
+        HKL currentLayout = _layoutController->getLayout();
+        int newLayout = 0;
+        for(int i = 0; i < _layoutsSettings.size(); i++)
+        {
+            if(currentLayout == _layoutsSettings[i].layout)
+            {
+                if(_layoutController->isRegistryChanged())
+                    newLayout = i + 1;
+                else
+                    newLayout = i;
+                break;
+            }
+        }
+
+        for(int i = 0; i < _layoutsSettings.size(); i++)
+        {
+            if(newLayout >= _layoutsSettings.size())
+            {
+                newLayout = 0;
+            }
+            if(!_layoutsSettings[newLayout].active)
+            {
+                newLayout++;
+            }
+            else
+            {
+                _layoutController->switchLayout(_layoutsSettings[newLayout].layout);
+                break;
+            }
+        }
+
+    }
+
+    _layoutChecker.changeWordLayout(selection, _layoutController->getLayout());
+    WinApiAdapter::SendUnicodeString(selection);
+    _state = SwitcherState::PAUSED;
+}
+
+QString CorrectLayout::convertCurrentWord(QString word)
+{
+    if (!_fceh->elementChanged(false))
+    {
+        _oldLayout = _layoutController->getLayout();
+        _layoutChecker.changeWordLayout(word, _changeLayout);
+        WinApiAdapter::ReplaceUnicodeString(word);
+    }
+    return word;
 }
 
 void CorrectLayout::checkLayout(const bool finished)
 {
     if (_state == SwitcherState::WORKING) {
         QString wordToCheck = _currentWord;
-        HKL layout = _layoutChecker.checkLayout(wordToCheck, finished);
+        HKL layout = _layoutChecker.checkLayout(wordToCheck, false);
         if (layout != nullptr && layout != _lastLayout) {
             int start = _position - _currentWord.size();
             int end = _currentText.indexOf(' ', start);
             if (end == -1)
                 end = _currentText.size();
             QString changedWord = _currentText.mid(start, end-start);
-            _layoutChecker.changeWordLayout(changedWord, _changeLayout);
-            if(changedWord.mid(0, changedWord.length()-1) != _currentWord)
+            _layoutChecker.changeWordLayout(changedWord, layout);
+
+            if(changedWord != _currentWord)
             {
                 _changeLayout = layout;
                 _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
@@ -299,12 +395,79 @@ void CorrectLayout::checkLayout(const bool finished)
         else
         {
             _changeLayout = 0x0;
+            QString wordToCheck = _currentWord;
+            HKL layout = _layoutChecker.checkLayout(wordToCheck, true);
+            if (layout != nullptr && layout != _lastLayout) {
+                int start = _position - _currentWord.size();
+                int end = _currentText.indexOf(' ', start);
+                if (end == -1)
+                    end = _currentText.size();
+                QString changedWord = _currentText.mid(start, end-start);
+                _layoutChecker.changeWordLayout(changedWord, layout);
+                if(changedWord != _currentWord)
+                {
+                    _changeLayoutSpace = layout;
+                    _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+                }
+            }
+            else
+            {
+                _changeLayoutSpace = 0x0;
+            }
         }
     }
 }
 
+bool CorrectLayout::loadDictionaries()
+{
+    for (int i = 0; i < _layoutsList.size(); i++)
+    {
+        bool check = false;
+        for (LayoutCorrectionSettings ls : _layoutsSettings)
+        {
+            if(ls.layout == _layoutsList[i])
+                check = ls.check;
+        }
+
+        wchar_t name[MAXNAMELENGTH];
+        LANGID language = (LANGID)(((UINT)_layoutsList[i]) & 0x0000FFFF);
+        LCID locale = MAKELCID(language, SORT_DEFAULT);
+
+        GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
+
+        qDebug() << "Start loading " << QString::fromWCharArray(name) << "(" << WinApiAdapter::decToHex(_layoutsList[i]) << ") dictionary";
+
+        QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[i]) + ".txt";
+        if (QFile::exists(path))
+        {
+            if(!_layoutChecker.load(path, _layoutsList[i], check))
+            {
+                qDebug() << "Error while loading dictionarie!";
+                return false;
+            }
+        }
+        else
+        {
+            qDebug() << "No dictionary file!";
+            return false;
+        }
+        qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
+    }
+
+    qDebug() << "Finish loading dictionaries";
+
+    return true;
+}
+
 void CorrectLayout::handleValueChange(QString newText)
 {
+
+    if(_state == SwitcherState::STOPED)
+        return;
+
+    if(_state == SwitcherState::CHANGING)
+        return;
+
     if(_exception)
         return;
 
@@ -314,15 +477,22 @@ void CorrectLayout::handleValueChange(QString newText)
         _state = SwitcherState::PAUSED;
         _lastLayout = newLayout;
     }
-
     _changeLayout = 0x0;
+    _changeLayoutSpace = 0x0;
 
-    newText = newText.replace('\n', ' ').replace('\r', ' ');
     int positionInText = 0;
     bool t = true;
+    newText = newText.replace('\n', ' ').replace('\r', ' ');
     if(_fceh->elementChanged(true)){
         _state = SwitcherState::SEARCHING;
+        _currentText = newText;
+        _position = -1;
+        return;
     }
+
+    if(_state == SwitcherState::PAUSED)
+        return;
+
     QStringList oldWords = _currentText.split(' ');
     QStringList newWords = newText.split(' ');
     QStringList changedWords;
@@ -342,6 +512,7 @@ void CorrectLayout::handleValueChange(QString newText)
         if(changedWords.size() != 2)
         {
             _state = SwitcherState::SEARCHING;
+            _position = -1;
         }
         else
         {
@@ -372,6 +543,7 @@ void CorrectLayout::handleValueChange(QString newText)
                 else
                 {
                     _state = SwitcherState::SEARCHING;
+                    _position = -1;
                 }
             }
         }
@@ -379,9 +551,95 @@ void CorrectLayout::handleValueChange(QString newText)
     else
     {
         _state = SwitcherState::SEARCHING;
+        _position = -1;
     }
 
     _currentText = newText;
+}
+
+void CorrectLayout::handleKey(RAWKEYBOARD keyboard)
+{
+    if(!_running)
+        return;
+
+    if(_exception)
+        return;
+
+    if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
+        return;
+
+    bool ctrl = GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL);
+    bool shift = GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
+    bool alt = GetAsyncKeyState(VK_LMENU);
+
+    if(_shortcutPause.vkCode == keyboard.VKey && _shortcutPause.vkCode != 0)
+        if(_shortcutPause.ctrl == ctrl)
+            if(_shortcutPause.shift == shift)
+                if(_shortcutPause.alt == alt)
+                {
+                    if(_state == SwitcherState::STOPED)
+                        _state = SwitcherState::PAUSED;
+                    else
+                        _state = SwitcherState::STOPED;
+                    return;
+                }
+
+    if(_state == SwitcherState::STOPED)
+        return;
+
+    if(_state == SwitcherState::CHANGING)
+        return;
+
+    if(_shortcutNext.vkCode == keyboard.VKey && _shortcutNext.vkCode != 0)
+        if(_shortcutNext.ctrl == ctrl)
+            if(_shortcutNext.shift == shift)
+                if(_shortcutNext.alt == alt)
+                {
+                    convertSelection(0);
+                    return;
+                }
+
+    if(_shortcutUndo.vkCode == keyboard.VKey && _shortcutUndo.vkCode != 0)
+        if(_shortcutUndo.ctrl == ctrl)
+            if(_shortcutUndo.shift == shift)
+                if(_shortcutUndo.alt == alt)
+                {
+                    if(_state == SwitcherState::WORKING)
+                    {
+                        _changeLayout = _oldLayout;
+                        convertCurrentWord(_currentWord);
+                        _layoutController->switchLayout(_changeLayout);
+                        _changeLayout = 0x0;
+                        _state = SwitcherState::PAUSED;
+                    }
+                    return;
+                }
+
+    for(int i = 0; i < _layoutsSettings.size(); i++)
+    {
+        if(_layoutsSettings[i].shortcutActivate.vkCode == keyboard.VKey && _layoutsSettings[i].shortcutActivate.vkCode != 0)
+            if(_layoutsSettings[i].shortcutActivate.ctrl == ctrl)
+                if(_layoutsSettings[i].shortcutActivate.shift == shift)
+                    if(_layoutsSettings[i].shortcutActivate.alt == alt)
+                    {
+                        _layoutsSettings[i].active = !_layoutsSettings[i].active;
+                        QString s = QString::number(reinterpret_cast<long long>(_layoutsSettings[i].layout));
+                        _settings.setValue("layouts/" + s + "/deactivated", !_layoutsSettings[i].active);
+                        return;
+                    }
+
+        if(_layoutsSettings[i].shortcutSelect.vkCode == keyboard.VKey && _layoutsSettings[i].shortcutSelect.vkCode != 0)
+            if(_layoutsSettings[i].shortcutSelect.ctrl == ctrl)
+                if(_layoutsSettings[i].shortcutSelect.shift == shift)
+                    if(_layoutsSettings[i].shortcutSelect.alt == alt)
+                    {
+                        convertSelection(_layoutsSettings[i].layout);
+                        return;
+                    }
+    }
+
+    if(keyboard.VKey == VK_SPACE || keyboard.VKey == VK_ACCEPT)
+        _state = SwitcherState::SEARCHING;
 }
 
 bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
@@ -389,23 +647,66 @@ bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
     PKBDLLHOOKSTRUCT key = (PKBDLLHOOKSTRUCT) lParam;
     QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
 
+    SwitcherState oldState = _state;
+    _state = SwitcherState::CHANGING;
+
     if (key != nullptr) {
         unsigned long vkCode = key->vkCode;
-        if(_layoutChecker.vkToChar(_changeLayout, vkCode, false) != NULL)
-            if (!_fceh->elementChanged(false) && _changeLayout != 0x0)
+
+        if (vkCode == VK_SPACE)
+        {
+            if (!_fceh->elementChanged(false) && _changeLayoutSpace != 0x0)
             {
+                HRESULT hr = _fceh->activateTextChangedHandler(false);
+                if(FAILED(hr))
+                    qDebug() << "Text changed event handler can't be removed";
                 int start = _position - _currentWord.size();
                 int end = _currentText.indexOf(' ', start);
                 if (end == -1)
                     end = _currentText.size();
                 QString changedWord = _currentText.mid(start, end-start);
+                _changeLayout = _changeLayoutSpace;
+                changedWord = convertCurrentWord(changedWord);
                 _layoutController->switchLayout(_changeLayout);
-                convertCurrentWord(changedWord);
+                _lastLayout = _changeLayout;
+                _currentText = _currentText.replace(start, changedWord.size(), changedWord);
                 _currentWord = changedWord;
+
+                _changeLayout = 0x0;
+                _changeLayoutSpace = 0x0;
+                _state = oldState;
+                hr = _fceh->activateTextChangedHandler(true);
+                if(FAILED(hr))
+                    qDebug() << "Text changed event handler can't be added";
+                return false;
+            }
+        }
+        if(_layoutChecker.vkToChar(_changeLayout, vkCode, false) != NULL)
+            if (!_fceh->elementChanged(false) && _changeLayout != 0x0)
+            {
+                HRESULT hr = _fceh->activateTextChangedHandler(false);
+                if(FAILED(hr))
+                    qDebug() << "Text changed event handler can't be removed";
+                int start = _position - _currentWord.size();
+                int end = _currentText.indexOf(' ', start);
+                if (end == -1)
+                    end = _currentText.size();
+                QString changedWord = _currentText.mid(start, end-start);
+                changedWord = convertCurrentWord(changedWord);
+                _lastLayout = _changeLayout;
+                _layoutController->switchLayout(_changeLayout);
+                _currentText = _currentText.replace(start, changedWord.size(), changedWord);
+                _currentWord = changedWord;
+                hr = _fceh->activateTextChangedHandler(true);
+                if(FAILED(hr))
+                    qDebug() << "Text changed event handler can't be added";
             }
     }
 
+    _state = oldState;
+
     _changeLayout = 0x0;
+    _changeLayoutSpace = 0x0;
     return false;
 }
 

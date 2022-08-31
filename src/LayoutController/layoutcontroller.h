@@ -28,6 +28,7 @@ public:
     bool stop();
     bool isRunning();
     HKL getLayout();
+    bool isRegistryChanged();
     void switchLayout(HKL hkl);
 
     void handleKey(RAWKEYBOARD keyboard);

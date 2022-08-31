@@ -30,6 +30,7 @@ private slots:
     void handleLsShortcutActivateButton();
     void handleLsShortcutSelectButton();
     void handleLsActivateCheckBox();
+    void handleLsAutoCheckBox();
     void handleLsSelectionChanged();
 
     void handleGApplyButton();
@@ -43,6 +44,11 @@ private slots:
     void handlePCapsLockCheckBox();
     void handlePLayoutCheckBox();
     void handlePLayoutComboBox();
+
+    void handleSApplyButton();
+    void handleSPauseButton();
+    void handleSNextButton();
+    void handleSUndoButton();
 private:
     void setupLayoutsList();
     void loadSettings();
@@ -59,6 +65,15 @@ private:
     bool _shortcutSelect = false;
     Key* _shortcutSelectKey;
 
+    bool _shortcutPause = false;
+    Key* _shortcutPauseKey;
+
+    bool _shortcutNext = false;
+    Key* _shortcutNextKey;
+
+    bool _shortcutUndo = false;
+    Key* _shortcutUndoKey;
+
     std::vector<HKL> _layoutsList;
     QModelIndex _index;
     int _tab;
@@ -69,6 +84,8 @@ private:
     bool _lsChanged = false;
 
     bool _eChanged = false;
+    bool _pChanged = false;
+    bool _sChanged = false;
 };
 
 #endif // CORRECTLAYOUTSETTINGSWINDOW_H

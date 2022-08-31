@@ -17,10 +17,11 @@
 #include "focuschangedeventhandler.h"
 #include "automationeventhandle.h"
 
-struct LayoutSwitchSettings
+struct LayoutCorrectionSettings
 {
     HKL layout;
     bool active;
+    bool check;
     Key shortcutActivate;
     Key shortcutSelect;
 };
@@ -40,6 +41,7 @@ public:
     void windowSwitched(HWND hwnd);
 
     void handleValueChange(QString newString);
+    void handleKey(RAWKEYBOARD keyboard);
     bool handleLlKey(int nCode, WPARAM wParam, LPARAM lParam);
     void handleMouse(RAWMOUSE mouse);
 private:
@@ -49,11 +51,11 @@ private:
     void getExceptionsList();
     void getLayoutSettingsList();
 
-    void convertSelection();
-    void convertCurrentWord(QString word);
+    void convertSelection(HKL newLayout);
+    QString convertCurrentWord(QString word);
     void checkLayout(const bool finished);
 
-    //void handleKeyAsync();
+    bool loadDictionaries();
 
     LayoutController* _layoutController;
 
@@ -64,12 +66,16 @@ private:
     HKL _lastLayout;
     HKL _previousLayout;
 
-    QVector<LayoutSwitchSettings> _layoutsSettings;
+    Key _shortcutPause;
+    Key _shortcutNext;
+    Key _shortcutUndo;
+    QVector<LayoutCorrectionSettings> _layoutsSettings;
     QStringList _exceptions;
 
     bool _whiteList;
 
     uint _keyLlPressId;
+    uint _keyPressId;
     uint _mousePressId;
     uint _windowSwitchId;
 
@@ -95,7 +101,10 @@ private:
     HKL _passwordNewLayout;
 
     HKL _changeLayout;
+    HKL _changeLayoutSpace;
     std::vector<HKL> _layoutsList;
+
+    HKL _oldLayout;
 };
 
 #endif // CORRECTLAYOUT_H

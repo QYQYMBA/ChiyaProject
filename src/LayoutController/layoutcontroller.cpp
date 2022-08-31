@@ -142,6 +142,11 @@ HKL LayoutController::getLayout()
         return 0;
 }
 
+bool LayoutController::isRegistryChanged()
+{
+    return _registryChanged;
+}
+
 void LayoutController::switchLayout(HKL layout)
 {
     HWND newParent = getForeground();
@@ -217,7 +222,6 @@ void LayoutController::switchLayout(HKL layout)
                 break;
             }
         }
-
     }
     else
     {

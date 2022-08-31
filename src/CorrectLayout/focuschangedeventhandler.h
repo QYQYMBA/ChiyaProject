@@ -16,6 +16,7 @@ public:
     bool elementChanged(bool reset);
 
     HRESULT QueryInterface(REFIID riid, LPVOID *ppvObj);
+    HRESULT activateTextChangedHandler(bool state);
     ULONG AddRef();
     ULONG Release();
 private:

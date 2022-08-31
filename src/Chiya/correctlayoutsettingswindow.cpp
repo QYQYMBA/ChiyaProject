@@ -18,10 +18,19 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     _settings.beginGroup("CorrectLayout");
 
     _shortcutActivateKey = new Key();
-    _shortcutActivateKey->vkCode = 0;
+    _shortcutActivateKey->vkCode = -1;
 
     _shortcutSelectKey = new Key();
-    _shortcutSelectKey->vkCode = 0;
+    _shortcutSelectKey->vkCode = -1;
+
+    _shortcutPauseKey = new Key();
+    _shortcutPauseKey->vkCode = -1;
+
+    _shortcutNextKey = new Key();
+    _shortcutNextKey->vkCode = -1;
+
+    _shortcutUndoKey = new Key();
+    _shortcutUndoKey->vkCode = -1;
 
     ui->setupUi(this);
     setWindowFlags(Qt::Window | Qt::MSWindowsFixedSizeDialogHint);
@@ -35,6 +44,7 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     connect(ui->lsShortcutActivateButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutActivateButton()));
     connect(ui->lsShortcutSelectButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutSelectButton()));
     connect(ui->lsActiveCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateCheckBox()));
+    connect(ui->lsAutoCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsAutoCheckBox()));
 
     connect(ui->eApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleEApplyButton()));
     connect(ui->eWhiteListCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
@@ -44,6 +54,11 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     connect(ui->pCapsLockCheckBoxCl, SIGNAL (clicked()), this, SLOT (handlePCapsLockCheckBox()));
     connect(ui->pLayoutCheckBoxCl, SIGNAL (clicked()), this, SLOT (handlePLayoutCheckBox()));
     connect(ui->pLayoutComboBoxCl, SIGNAL (currentIndexChanged()), this, SLOT (handlePLayoutComboBox()));
+
+    connect(ui->sApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleSApplyButton()));
+    connect(ui->sPauseButtonCl, SIGNAL (clicked()), this, SLOT (handleSPauseButton()));
+    connect(ui->sNextButtonCl, SIGNAL (clicked()), this, SLOT (handleSNextButton()));
+    connect(ui->sUndoButtonCl, SIGNAL (clicked()), this, SLOT (handleSUndoButton()));
 
     setupLayoutsList();
 
@@ -114,9 +129,71 @@ void CorrectLayoutSettingsWindow::loadSettings()
     ui->pLayoutCheckBoxCl->setChecked(layoutChecked);
     ui->pLayoutComboBoxCl->setEnabled(layoutChecked);
 
+    if(_settings.value("shortcuts/shortcut/pause/active").toBool())
+    {
+        QString shortcut = "";
+        if(_settings.value("shortcuts/shortcut/pause/ctrl").toBool())
+            shortcut += "Ctrl +";
+        if(_settings.value("shortcuts/shortcut/pause/shift").toBool())
+            shortcut += "Shift +";
+        if(_settings.value("shortcuts/shortcut/pause/alt").toBool())
+            shortcut += "Alt +";
+        std::string s = "";
+        s += MapVirtualKey(_settings.value("shortcuts/shortcut/pause/vkCode").toInt(), MAPVK_VK_TO_CHAR);
+        shortcut += QString::fromStdString(s);
+
+        ui->sPauseLineEditCl->setText(shortcut);
+    }
+    else
+    {
+        ui->sPauseLineEditCl->setText("");
+    }
+
+    if(_settings.value("shortcuts/shortcut/next/active").toBool())
+    {
+        QString shortcut = "";
+        if(_settings.value("shortcuts/shortcut/next/ctrl").toBool())
+            shortcut += "Ctrl +";
+        if(_settings.value("shortcuts/shortcut/next/shift").toBool())
+            shortcut += "Shift +";
+        if(_settings.value("shortcuts/shortcut/next/alt").toBool())
+            shortcut += "Alt +";
+        std::string s = "";
+        s += MapVirtualKey(_settings.value("shortcuts/shortcut/next/vkCode").toInt(), MAPVK_VK_TO_CHAR);
+        shortcut += QString::fromStdString(s);
+
+        ui->sNextLineEditCl->setText(shortcut);
+    }
+    else
+    {
+        ui->sNextLineEditCl->setText("");
+    }
+
+    if(_settings.value("shortcuts/shortcut/undo/active").toBool())
+    {
+        QString shortcut = "";
+        if(_settings.value("shortcuts/shortcut/undo/ctrl").toBool())
+            shortcut += "Ctrl +";
+        if(_settings.value("shortcuts/shortcut/undo/shift").toBool())
+            shortcut += "Shift +";
+        if(_settings.value("shortcuts/shortcut/undo/alt").toBool())
+            shortcut += "Alt +";
+        std::string s = "";
+        s += MapVirtualKey(_settings.value("shortcuts/shortcut/undo/vkCode").toInt(), MAPVK_VK_TO_CHAR);
+        shortcut += QString::fromStdString(s);
+
+        ui->sUndoLineEditCl->setText(shortcut);
+    }
+    else
+    {
+        ui->sUndoLineEditCl->setText("");
+    }
+
     _gChanged = false;
     _lsChanged = false;
     _eChanged = false;
+    _pChanged = false;
+    _sChanged = false;
 }
 
 void CorrectLayoutSettingsWindow::handleTabChanged()
@@ -147,23 +224,45 @@ void CorrectLayoutSettingsWindow::handleTabChanged()
             return;
         }
     }
+    else if(oldTab == 3 && _pChanged)
+    {
+        if(!unsavedChangesMessage() && !(ui->mainTabs->currentIndex() == 2))
+        {
+            ui->mainTabs->setCurrentIndex(oldTab);
+            return;
+        }
+    }
+    else if(oldTab == 4 && _sChanged)
+    {
+        if(!unsavedChangesMessage() && !(ui->mainTabs->currentIndex() == 2))
+        {
+            ui->mainTabs->setCurrentIndex(oldTab);
+            return;
+        }
+    }
 }
 
 void CorrectLayoutSettingsWindow::handleLsShortcutActivateButton()
 {
-    _shortcutSelect = false;
     _shortcutActivate = true;
+    _shortcutSelect = false;
+    _shortcutPause = false;
+    _shortcutNext = false;
+    _shortcutUndo = false;
 }
 
 void CorrectLayoutSettingsWindow::handleLsShortcutSelectButton()
 {
-    _shortcutSelect = true;
     _shortcutActivate = false;
+    _shortcutSelect = true;
+    _shortcutPause = false;
+    _shortcutNext = false;
+    _shortcutUndo = false;
 }
 
 void CorrectLayoutSettingsWindow::keyPressEvent(QKeyEvent *event)
 {
-    if(_shortcutActivate)
+    if(_shortcutActivate || _shortcutSelect || _shortcutPause || _shortcutNext || _shortcutUndo)
     {
         if(event->key() == Qt::Key_Control || event->key() ==Qt::Key_Shift || event->key() == Qt::Key_Alt)
             return;
@@ -173,6 +272,7 @@ void CorrectLayoutSettingsWindow::keyPressEvent(QKeyEvent *event)
             _shortcutActivateKey->vkCode = 0;
             _shortcutActivate = false;
             ui->lsShortcutActivateLineEditCl->setText("");
+            _lsChanged = true;
             return;
         }
         Key* key = new Key();
@@ -192,57 +292,65 @@ void CorrectLayoutSettingsWindow::keyPressEvent(QKeyEvent *event)
         std::string s = "";
         s += MapVirtualKey(key->vkCode, MAPVK_VK_TO_CHAR);
         shortcut += QString::fromStdString(s);
-
-        _shortcutActivateKey = key;
-
-        ui->lsShortcutActivateLineEditCl->setText(shortcut);
-
-        _shortcutActivate = false;
-
-        _lsChanged = true;
-    }
-
-    if(_shortcutSelect)
-    {
-        if(event->key() == Qt::Key_Control || event->key() ==Qt::Key_Shift || event->key() == Qt::Key_Alt)
-            return;
-        if(event->key() == Qt::Key_Escape)
+        if(_shortcutActivate)
         {
-            _shortcutSelectKey = new Key();
-            _shortcutSelectKey->vkCode = 0;
-            _shortcutSelect = false;
-            ui->lsShortcutSelectLineEditCl->setText("");
-            return;
+            _shortcutActivateKey = key;
+
+            ui->lsShortcutActivateLineEditCl->setText(shortcut);
+
+            _shortcutActivate = false;
+
+            _lsChanged = true;
         }
-        Key* key = new Key();
-        key->vkCode = event->nativeVirtualKey();
-        key->scanCode = event->key();
-        key->ctrl = GetAsyncKeyState(VK_CONTROL);
-        key->shift = GetAsyncKeyState(VK_SHIFT);
-        key->alt = GetAsyncKeyState(VK_MENU);
+        else if(_shortcutSelect)
+        {
+            _shortcutSelectKey = key;
 
-        QString shortcut = "";
-        if(key->ctrl)
-            shortcut += "Ctrl +";
-        if(key->shift)
-            shortcut += "Shift +";
-        if(key->alt)
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(key->vkCode, MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            ui->lsShortcutSelectLineEditCl->setText(shortcut);
 
-        _shortcutSelectKey = key;
+            _shortcutSelect = false;
 
-        ui->lsShortcutSelectLineEditCl->setText(shortcut);
+            _lsChanged = true;
+        }
+        else if(_shortcutPause)
+        {
+            _shortcutPauseKey = key;
 
-        _shortcutSelect = false;
+            ui->sPauseLineEditCl->setText(shortcut);
 
-        _lsChanged = true;
+            _shortcutPause = false;
+
+            _sChanged = true;
+        }
+        else if(_shortcutNext)
+        {
+            _shortcutNextKey = key;
+
+            ui->sNextLineEditCl->setText(shortcut);
+
+            _shortcutNext = false;
+
+            _sChanged = true;
+        }
+        else if(_shortcutUndo)
+        {
+            _shortcutUndoKey = key;
+
+            ui->sUndoLineEditCl->setText(shortcut);
+
+            _shortcutUndo = false;
+
+            _sChanged = true;
+        }
     }
 }
 
 void CorrectLayoutSettingsWindow::handleLsActivateCheckBox()
+{
+    _lsChanged = true;
+}
+
+void CorrectLayoutSettingsWindow::handleLsAutoCheckBox()
 {
     _lsChanged = true;
 }
@@ -254,32 +362,54 @@ void CorrectLayoutSettingsWindow::handleLsApplyButton()
 
     _lsChanged = false;
 
-    QModelIndex index = ui->lsLayoutsListViewCl->currentIndex();
     QString itemText;
     itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     _settings.setValue("runOnStart", ui->gAutoStartCheckBoxCl->isChecked());
 
     _settings.setValue("layouts/" + itemText + "/deactivated", ui->lsActiveCheckBoxCl->isChecked());
+    _settings.setValue("layouts/" + itemText + "/auto", ui->lsAutoCheckBoxCl->isChecked());
 
-    _settings.setValue("layouts/" + itemText + "/shortcut/activate/active", _shortcutActivateKey->vkCode != 0);
-    if(_shortcutActivateKey->vkCode != 0)
+    if(_shortcutActivateKey->vkCode != -1)
     {
-        _settings.setValue("layouts/" + itemText + "/shortcut/activate/ctrl", _shortcutActivateKey->ctrl);
-        _settings.setValue("layouts/" + itemText + "/shortcut/activate/shift", _shortcutActivateKey->shift);
-        _settings.setValue("layouts/" + itemText + "/shortcut/activate/alt", _shortcutActivateKey->alt);
-        _settings.setValue("layouts/" + itemText + "/shortcut/activate/qtCode", _shortcutActivateKey->scanCode);
-        _settings.setValue("layouts/" + itemText + "/shortcut/activate/vkCode", _shortcutActivateKey->vkCode);
+        _settings.setValue("layouts/" + itemText + "/shortcut/activate/active", _shortcutActivateKey->vkCode != 0);
+        if(_shortcutActivateKey->vkCode != 0)
+        {
+            _settings.setValue("layouts/" + itemText + "/shortcut/activate/ctrl", _shortcutActivateKey->ctrl);
+            _settings.setValue("layouts/" + itemText + "/shortcut/activate/shift", _shortcutActivateKey->shift);
+            _settings.setValue("layouts/" + itemText + "/shortcut/activate/alt", _shortcutActivateKey->alt);
+            _settings.setValue("layouts/" + itemText + "/shortcut/activate/qtCode", _shortcutActivateKey->scanCode);
+            _settings.setValue("layouts/" + itemText + "/shortcut/activate/vkCode", _shortcutActivateKey->vkCode);
+        }
+        else
+        {
+            _settings.remove("layouts/" + itemText + "/shortcut/activate/ctrl");
+            _settings.remove("layouts/" + itemText + "/shortcut/activate/shift");
+            _settings.remove("layouts/" + itemText + "/shortcut/activate/alt");
+            _settings.remove("layouts/" + itemText + "/shortcut/activate/qtCode");
+            _settings.remove("layouts/" + itemText + "/shortcut/activate/vkCode");
+        }
     }
 
-    _settings.setValue("layouts/" + itemText + "/shortcut/select/active", _shortcutSelectKey->vkCode != 0);
-    if(_shortcutSelectKey->vkCode != 0)
+    if(_shortcutSelectKey->vkCode != -1)
     {
-        _settings.setValue("layouts/" + itemText + "/shortcut/select/ctrl", _shortcutSelectKey->ctrl);
-        _settings.setValue("layouts/" + itemText + "/shortcut/select/shift", _shortcutSelectKey->shift);
-        _settings.setValue("layouts/" + itemText + "/shortcut/select/alt", _shortcutSelectKey->alt);
-        _settings.setValue("layouts/" + itemText + "/shortcut/select/qtCode", _shortcutSelectKey->scanCode);
-        _settings.setValue("layouts/" + itemText + "/shortcut/select/vkCode", _shortcutSelectKey->vkCode);
+        _settings.setValue("layouts/" + itemText + "/shortcut/select/active", _shortcutSelectKey->vkCode != 0);
+        if(_shortcutSelectKey->vkCode != 0)
+        {
+            _settings.setValue("layouts/" + itemText + "/shortcut/select/ctrl", _shortcutSelectKey->ctrl);
+            _settings.setValue("layouts/" + itemText + "/shortcut/select/shift", _shortcutSelectKey->shift);
+            _settings.setValue("layouts/" + itemText + "/shortcut/select/alt", _shortcutSelectKey->alt);
+            _settings.setValue("layouts/" + itemText + "/shortcut/select/qtCode", _shortcutSelectKey->scanCode);
+            _settings.setValue("layouts/" + itemText + "/shortcut/select/vkCode", _shortcutSelectKey->vkCode);
+        }
+        else
+        {
+            _settings.remove("layouts/" + itemText + "/shortcut/select/ctrl");
+            _settings.remove("layouts/" + itemText + "/shortcut/select/shift");
+            _settings.remove("layouts/" + itemText + "/shortcut/select/alt");
+            _settings.remove("layouts/" + itemText + "/shortcut/select/qtCode");
+            _settings.remove("layouts/" + itemText + "/shortcut/select/vkCode");
+        }
     }
 }
 
@@ -304,6 +434,7 @@ void CorrectLayoutSettingsWindow::handleLsSelectionChanged(){
     itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     ui->lsActiveCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
+    ui->lsAutoCheckBoxCl->setChecked(_settings.value("layouts/" + itemText + "/auto", true).toBool());
 
     WinApiAdapter::SetKeyboardLayout(_layoutsList[_index.row()]);
 
@@ -387,6 +518,7 @@ bool CorrectLayoutSettingsWindow::unsavedChangesMessage()
         _gChanged = false;
         _lsChanged = false;
         _eChanged = false;
+        _pChanged = false;
     }
     return (reply == QMessageBox::Yes);
 }
@@ -419,20 +551,120 @@ void CorrectLayoutSettingsWindow::handlePApplyButton()
         int index = ui->pLayoutComboBoxCl->currentIndex();
         _settings.setValue("passwords/layout", WinApiAdapter::hklToStr(_layoutsList[index]));
     }
+
+    _pChanged = false;
 }
 
 void CorrectLayoutSettingsWindow::handlePCapsLockCheckBox()
 {
-    _eChanged = true;
+    _pChanged = true;
 }
 
 void CorrectLayoutSettingsWindow::handlePLayoutCheckBox()
 {
-    _eChanged = true;
+    _pChanged = true;
     ui->pLayoutComboBoxCl->setEnabled(!ui->pLayoutComboBoxCl->isEnabled());
 }
 
 void CorrectLayoutSettingsWindow::handlePLayoutComboBox()
 {
-    _eChanged = true;
+    _pChanged = true;
+}
+
+void CorrectLayoutSettingsWindow::handleSApplyButton()
+{
+    if(!_sChanged)
+        return;
+
+    _sChanged = false;
+
+    if(_shortcutPauseKey->vkCode != -1)
+    {
+        _settings.setValue("shortcuts/shortcut/pause/active", _shortcutPauseKey->vkCode != 0);
+        if(_shortcutPauseKey->vkCode != 0)
+        {
+            _settings.setValue("shortcuts/shortcut/pause/ctrl", _shortcutPauseKey->ctrl);
+            _settings.setValue("shortcuts/shortcut/pause/shift", _shortcutPauseKey->shift);
+            _settings.setValue("shortcuts/shortcut/pause/alt", _shortcutPauseKey->alt);
+            _settings.setValue("shortcuts/shortcut/pause/qtCode", _shortcutPauseKey->scanCode);
+            _settings.setValue("shortcuts/shortcut/pause/vkCode", _shortcutPauseKey->vkCode);
+        }
+        else
+        {
+            _settings.remove("shortcuts/shortcut/pause/ctrl");
+            _settings.remove("shortcuts/shortcut/pause/shift");
+            _settings.remove("shortcuts/shortcut/pause/alt");
+            _settings.remove("shortcuts/shortcut/pause/qtCode");
+            _settings.remove("shortcuts/shortcut/pause/vkCode");
+        }
+    }
+
+    if(_shortcutNextKey->vkCode != -1)
+    {
+        _settings.setValue("shortcuts/shortcut/next/active", _shortcutNextKey->vkCode != 0);
+        if(_shortcutNextKey->vkCode != 0)
+        {
+            _settings.setValue("shortcuts/shortcut/next/ctrl", _shortcutNextKey->ctrl);
+            _settings.setValue("shortcuts/shortcut/next/shift", _shortcutNextKey->shift);
+            _settings.setValue("shortcuts/shortcut/next/alt", _shortcutNextKey->alt);
+            _settings.setValue("shortcuts/shortcut/next/qtCode", _shortcutNextKey->scanCode);
+            _settings.setValue("shortcuts/shortcut/next/vkCode", _shortcutNextKey->vkCode);
+        }
+        else
+        {
+            _settings.remove("shortcuts/shortcut/next/ctrl");
+            _settings.remove("shortcuts/shortcut/next/shift");
+            _settings.remove("shortcuts/shortcut/next/alt");
+            _settings.remove("shortcuts/shortcut/next/qtCode");
+            _settings.remove("shortcuts/shortcut/next/vkCode");
+        }
+    }
+
+    if(_shortcutUndoKey->vkCode != -1)
+    {
+        _settings.setValue("shortcuts/shortcut/undo/active", _shortcutUndoKey->vkCode != 0);
+        if(_shortcutUndoKey->vkCode != 0)
+        {
+            _settings.setValue("shortcuts/shortcut/undo/ctrl", _shortcutUndoKey->ctrl);
+            _settings.setValue("shortcuts/shortcut/undo/shift", _shortcutUndoKey->shift);
+            _settings.setValue("shortcuts/shortcut/undo/alt", _shortcutUndoKey->alt);
+            _settings.setValue("shortcuts/shortcut/undo/qtCode", _shortcutUndoKey->scanCode);
+            _settings.setValue("shortcuts/shortcut/undo/vkCode", _shortcutUndoKey->vkCode);
+        }
+        else
+        {
+            _settings.remove("shortcuts/shortcut/undo/ctrl");
+            _settings.remove("shortcuts/shortcut/undo/shift");
+            _settings.remove("shortcuts/shortcut/undo/alt");
+            _settings.remove("shortcuts/shortcut/undo/qtCode");
+            _settings.remove("shortcuts/shortcut/undo/vkCode");
+        }
+    }
+}
+
+void CorrectLayoutSettingsWindow::handleSPauseButton()
+{
+    _shortcutActivate = false;
+    _shortcutSelect = false;
+    _shortcutPause = true;
+    _shortcutNext = false;
+    _shortcutUndo = false;
+}
+
+void CorrectLayoutSettingsWindow::handleSNextButton()
+{
+    _shortcutActivate = false;
+    _shortcutSelect = false;
+    _shortcutPause = false;
+    _shortcutNext = true;
+    _shortcutUndo = false;
+}
+
+void CorrectLayoutSettingsWindow::handleSUndoButton()
+{
+    _shortcutActivate = false;
+    _shortcutSelect = false;
+    _shortcutPause = false;
+    _shortcutNext = false;
+    _shortcutUndo = true;
 }

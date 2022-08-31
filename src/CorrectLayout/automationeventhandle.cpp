@@ -13,10 +13,12 @@ AutomationEventHandle::AutomationEventHandle(IUIAutomation *automation, void* cl
     _automation = automation;
     _cl = cl;
     _lastElement = NULL;
+    _keyboardFocus = NULL;
 }
 
 HRESULT AutomationEventHandle::updateText(IUIAutomationElement *element)
 {
+    _keyboardFocus = element;
     return HandleAutomationEvent(element, NULL);
 }
 
@@ -30,7 +32,9 @@ IUIAutomationElement* AutomationEventHandle::findElement(IUIAutomationElement* e
     IUIAutomationCondition* hasKeyboardFocusCondition;
     IUIAutomationCondition* isTextPatternAvailable;
     IUIAutomationCondition* textHasKeyboardFocus;
+    IUIAutomationCondition* isValueReadOnly;
     IUIAutomationCondition* notPassword;
+    IUIAutomationCondition* textEditable;
     IUIAutomationCondition* searchCondition;
     IUIAutomationElement* keyboardFocus = NULL;
     VARIANT trueVar;
@@ -57,15 +61,25 @@ IUIAutomationElement* AutomationEventHandle::findElement(IUIAutomationElement* e
         qDebug() << "Failed to CreatePropertyCondition";
         return NULL;
     }
-
+    hr = _automation->CreatePropertyCondition(UIA_ValueIsReadOnlyPropertyId, falseVar, &isValueReadOnly);
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to CreatePropertyCondition";
+        return NULL;
+    }
     _automation->CreateAndCondition(hasKeyboardFocusCondition, isTextPatternAvailable, &textHasKeyboardFocus);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
         return NULL;
     }
-
-    _automation->CreateAndCondition(textHasKeyboardFocus, notPassword, &searchCondition);
+    _automation->CreateAndCondition(textHasKeyboardFocus, isValueReadOnly, &textEditable);
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to CreateAndCondition";
+        return NULL;
+    }
+    _automation->CreateAndCondition(textEditable, notPassword, &searchCondition);
     if (FAILED(hr))
     {
         qDebug() << "Failed to CreateAndCondition";
@@ -84,14 +98,54 @@ IUIAutomationElement* AutomationEventHandle::findElement(IUIAutomationElement* e
         {
             keyboardFocus = element;
         }
-        hr = _automation->CreatePropertyCondition(UIA_IsPasswordPropertyId, trueVar, &notPassword);
-        if (FAILED(hr))
-        {
-            qDebug() << "Failed to CreatePropertyCondition";
-            return NULL;
-        }
     }
     return keyboardFocus;
+}
+
+QString AutomationEventHandle::getElementSelection(IUIAutomationElement *element)
+{
+    if(element == NULL)
+    {
+        return "";
+    }
+
+    IUIAutomationTextPattern* atp;
+    IUIAutomationTextRange* atr;
+    BSTR bstr;
+    QString str = "";
+    HRESULT hr = element->GetCurrentPattern(UIA_TextPatternId, (IUnknown**)&atp);
+    if (FAILED(hr) || atp == NULL)
+    {
+        qDebug() << "Failed to get text pattern.";
+        return "";
+    }
+    IUIAutomationTextRangeArray* selections;
+    atp->GetSelection(&selections);
+    if (FAILED(hr))
+    {
+        qDebug() << "Failed to get document range.";
+        return "";
+    }
+    int len = -1;
+    if(selections == NULL || selections->get_Length(&len) > 0)
+    {
+        qDebug() << "There is no selection, or there is more than 1 selection";
+        return "";
+    }
+    hr = selections->GetElement(0, &atr);
+    if (FAILED(hr) || atp == NULL)
+    {
+        qDebug() << "Failed to get text range.";
+        return "";
+    }
+    atr->GetText(300, &bstr);
+    if (FAILED(hr) || bstr == 0x0)
+    {
+        qDebug() << "Failed to get element text.";
+        return "";
+    }
+    str = QString::fromStdWString(bstr);
+    return str;
 }
 
 QString AutomationEventHandle::getElementText(IUIAutomationElement* element)
@@ -118,7 +172,7 @@ QString AutomationEventHandle::getElementText(IUIAutomationElement* element)
         return "";
     }
     atr->GetText(300, &bstr);
-    if (FAILED(hr))
+    if (FAILED(hr) || bstr == 0x0)
     {
         qDebug() << "Failed to get element text.";
         return "";
@@ -190,4 +244,9 @@ ULONG AutomationEventHandle::Release()
 QString AutomationEventHandle::getText()
 {
     return getElementText(_lastElement);
+}
+
+QString AutomationEventHandle::getSelection()
+{
+    return getElementSelection(findElement(_lastElement));
 }

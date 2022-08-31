@@ -40,6 +40,30 @@ HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj
         return E_NOINTERFACE;
 }
 
+HRESULT FocusChangedEventHandler::activateTextChangedHandler(bool state)
+{
+    HRESULT hr;
+    if(state)
+    {
+        hr = _automation->AddAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, TreeScope_Element, NULL, (IUIAutomationEventHandler*)_aeh);
+        if (FAILED(hr))
+        {
+            qDebug() << "Can't add property automation event handler";
+            return hr;
+        }
+    }
+    else
+    {
+        hr = _automation->RemoveAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, (IUIAutomationEventHandler*)_aeh);
+
+        if (FAILED(hr))
+        {
+            qDebug() << "Can't remove event handler";
+            return hr;
+        }
+    }
+}
+
 HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *sender)
 {
     HWND hwnd = GetForegroundWindow();
@@ -101,7 +125,7 @@ HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *
         return hr;
     }
 
-    hr = _automation->AddAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, TreeScope_Subtree, NULL, (IUIAutomationEventHandler*)_aeh);
+    hr = _automation->AddAutomationEventHandler(UIA_Text_TextChangedEventId, _keyboardFocus, TreeScope_Element, NULL, (IUIAutomationEventHandler*)_aeh);
     if (FAILED(hr))
     {
         qDebug() << "Can't add property automation event handler";
