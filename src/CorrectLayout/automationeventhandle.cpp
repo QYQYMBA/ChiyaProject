@@ -159,6 +159,13 @@ QString AutomationEventHandle::getElementText(IUIAutomationElement* element)
     IUIAutomationTextRange* atr;
     BSTR bstr;
     QString str = "";
+
+    VARIANT isText;
+    _keyboardFocus->GetCurrentPropertyValue(UIA_IsTextPatternAvailablePropertyId, &isText);
+    if(!isText.boolVal)
+    {
+        return "";
+    }
     HRESULT hr = element->GetCurrentPattern(UIA_TextPatternId, (IUnknown**)&atp);
     if (FAILED(hr) || atp == NULL)
     {

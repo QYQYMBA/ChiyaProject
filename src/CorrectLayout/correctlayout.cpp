@@ -483,7 +483,7 @@ void CorrectLayout::handleValueChange(QString newText)
     int positionInText = 0;
     bool t = true;
     newText = newText.replace('\n', ' ').replace('\r', ' ');
-    if(_fceh->elementChanged(true)){
+    if(newText == "" || _fceh->elementChanged(true)){
         _state = SwitcherState::SEARCHING;
         _currentText = newText;
         _position = -1;
