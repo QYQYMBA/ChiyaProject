@@ -330,10 +330,7 @@ void CorrectLayout::convertSelection(HKL switchToLayout)
         {
             if(currentLayout == _layoutsSettings[i].layout)
             {
-                if(_layoutController->isRegistryChanged())
-                    newLayout = i + 1;
-                else
-                    newLayout = i;
+                newLayout = i + 1;
                 break;
             }
         }

@@ -133,14 +133,12 @@ void CorrectLayoutSettingsWindow::loadSettings()
     {
         QString shortcut = "";
         if(_settings.value("shortcuts/shortcut/pause/ctrl").toBool())
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(_settings.value("shortcuts/shortcut/pause/shift").toBool())
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(_settings.value("shortcuts/shortcut/pause/alt").toBool())
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("shortcuts/shortcut/pause/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(_settings.value("shortcuts/shortcut/pause/vkCode").toUInt());
 
         ui->sPauseLineEditCl->setText(shortcut);
     }
@@ -153,14 +151,12 @@ void CorrectLayoutSettingsWindow::loadSettings()
     {
         QString shortcut = "";
         if(_settings.value("shortcuts/shortcut/next/ctrl").toBool())
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(_settings.value("shortcuts/shortcut/next/shift").toBool())
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(_settings.value("shortcuts/shortcut/next/alt").toBool())
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("shortcuts/shortcut/next/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(_settings.value("shortcuts/shortcut/next/vkCode").toUInt());
 
         ui->sNextLineEditCl->setText(shortcut);
     }
@@ -173,14 +169,12 @@ void CorrectLayoutSettingsWindow::loadSettings()
     {
         QString shortcut = "";
         if(_settings.value("shortcuts/shortcut/undo/ctrl").toBool())
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(_settings.value("shortcuts/shortcut/undo/shift").toBool())
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(_settings.value("shortcuts/shortcut/undo/alt").toBool())
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("shortcuts/shortcut/undo/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(_settings.value("shortcuts/shortcut/undo/vkCode").toUInt());
 
         ui->sUndoLineEditCl->setText(shortcut);
     }
@@ -284,14 +278,12 @@ void CorrectLayoutSettingsWindow::keyPressEvent(QKeyEvent *event)
 
         QString shortcut = "";
         if(key->ctrl)
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(key->shift)
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(key->alt)
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(key->vkCode, MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(key->vkCode);
         if(_shortcutActivate)
         {
             _shortcutActivateKey = key;

@@ -74,6 +74,69 @@ QString WinApiAdapter::hklToStr(HKL hkl)
     return QString::fromStdString(ss);
 }
 
+QString WinApiAdapter::vkToString(uint vkCode)
+{
+    if (vkCode == VK_PAUSE)
+        return "Break";
+    if (vkCode == VK_SNAPSHOT)
+        return "PRTSC";
+    if (vkCode == VK_SCROLL)
+        return "SCRLK";
+    if (vkCode == VK_INSERT)
+        return "Insert";
+    if (vkCode == VK_HOME)
+        return "Home";
+    if (vkCode == VK_PRIOR)
+        return "PG UP";
+    if (vkCode == VK_NEXT)
+        return "PG DN";
+    if (vkCode == VK_END)
+        return "End";
+    if (vkCode == VK_DELETE)
+        return "Del";
+    if (vkCode == VK_UP)
+        return "Up";
+    if (vkCode == VK_DOWN)
+        return "Down";
+    if (vkCode == VK_LEFT)
+        return "Left";
+    if (vkCode == VK_RIGHT)
+        return "Right";
+    if (vkCode == VK_F1)
+        return "F1";
+    if (vkCode == VK_F2)
+        return "F2";
+    if (vkCode == VK_F3)
+        return "F3";
+    if (vkCode == VK_F4)
+        return "F4";
+    if (vkCode == VK_F5)
+        return "F5";
+    if (vkCode == VK_F6)
+        return "F6";
+    if (vkCode == VK_F7)
+        return "F7";
+    if (vkCode == VK_F8)
+        return "F8";
+    if (vkCode == VK_F9)
+        return "F9";
+    if (vkCode == VK_F10)
+        return "F10";
+    if (vkCode == VK_F11)
+        return "F11";
+    if (vkCode == VK_F12)
+        return "F12";
+    if (vkCode == VK_ESCAPE)
+        return "ESC";
+    if (vkCode == VK_NUMLOCK)
+        return "Numlock";
+    if (vkCode == VK_CAPITAL)
+        return "Capslock";
+    std::string s = "";
+    s += MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR);
+    return QString::fromStdString(s);
+}
+
 std::vector<HKL> WinApiAdapter::getLayoutsList()
 {
     UINT n;
@@ -94,7 +157,6 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
         {
             wchar_t name[MAXNAMELENGTH];
             LANGID language = (LANGID)(((UINT)layoutsList[j]) & 0x0000FFFF);
-            qDebug() << layoutsList[j];
             LCID locale = MAKELCID(language, SORT_DEFAULT);
 
             GetLocaleInfo(locale, LOCALE_SNAME, name, MAXNAMELENGTH);

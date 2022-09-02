@@ -20,6 +20,7 @@ public:
 
     static std::vector<HKL> getLayoutsList();
     static QString hklToStr(HKL hkl);
+    static QString vkToString(uint vkCode);
 
     static void SetKeyboardLayout(HKL layout);
 

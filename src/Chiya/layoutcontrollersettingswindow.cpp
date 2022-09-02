@@ -177,14 +177,12 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
 
         QString shortcut = "";
         if(key->ctrl)
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(key->shift)
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(key->alt)
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(key->vkCode, MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(key->vkCode);
 
         _shortcutActivateKey = key;
 
@@ -325,9 +323,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
            shortcut += "Shift +";
         if(_settings.value("layouts/" + itemText + "/shortcut/activate/alt").toBool())
             shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/activate/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+        shortcut += WinApiAdapter::vkToString(_settings.value("layouts/" + itemText + "/shortcut/activate/vkCode").toUInt());
 
         ui->lsShortcutActivateLineEditLs->setText(shortcut);
    }
@@ -345,9 +341,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
            shortcut += "Shift +";
         if(_settings.value("layouts/" + itemText + "/shortcut/select/alt").toBool())
             shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/select/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+        shortcut += WinApiAdapter::vkToString(_settings.value("layouts/" + itemText + "/shortcut/select/vkCode").toUInt());
 
         ui->lsShortcutSelectLineEditLs->setText(shortcut);
    }
