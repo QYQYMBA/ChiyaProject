@@ -471,19 +471,22 @@ void CorrectLayout::handleValueChange(QString newText)
     if(_exception)
         return;
 
+    bool elementChanged = _fceh->elementChanged(true);
+
     HKL newLayout = _layoutController->getLayout();
-    if(newLayout != _lastLayout)
+    if(newText.size() < 2 && !elementChanged && newLayout != _lastLayout)
     {
         _state = SwitcherState::PAUSED;
-        _lastLayout = newLayout;
     }
+    _lastLayout = newLayout;
+
     _changeLayout = 0x0;
     _changeLayoutSpace = 0x0;
 
     int positionInText = 0;
     bool t = true;
     newText = newText.replace('\n', ' ').replace('\r', ' ');
-    if(newText == "" || _fceh->elementChanged(true)){
+    if(newText == "" || elementChanged){
         _state = SwitcherState::SEARCHING;
         _currentText = newText;
         _position = -1;
@@ -638,8 +641,8 @@ void CorrectLayout::handleKey(RAWKEYBOARD keyboard)
                     }
     }
 
-    if(keyboard.VKey == VK_SPACE || keyboard.VKey == VK_ACCEPT)
-        _state = SwitcherState::SEARCHING;
+    if(keyboard.VKey == VK_SPACE || keyboard.VKey == VK_ACCEPT || keyboard.VKey == VK_BACK || keyboard.VKey == VK_DELETE)
+       _fceh->newElement();
 }
 
 bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)

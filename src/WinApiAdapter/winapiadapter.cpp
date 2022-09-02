@@ -94,6 +94,7 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
         {
             wchar_t name[MAXNAMELENGTH];
             LANGID language = (LANGID)(((UINT)layoutsList[j]) & 0x0000FFFF);
+            qDebug() << layoutsList[j];
             LCID locale = MAKELCID(language, SORT_DEFAULT);
 
             GetLocaleInfo(locale, LOCALE_SNAME, name, MAXNAMELENGTH);
@@ -112,11 +113,12 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 
             if(QString::fromWCharArray(name) == order[i])
             {
-                if (layoutsList[j] == 0x0)
+                if (layoutsList[j] != 0x0)
+                {
+                    list.push_back(layoutsList[j]);
+                    layoutsList[j] = 0x0;
                     break;
-                list.push_back(layoutsList[j]);
-                layoutsList[j] = 0x0;
-                break;
+                }
             }
         }
     }

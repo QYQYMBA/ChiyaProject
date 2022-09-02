@@ -14,6 +14,7 @@ class FocusChangedEventHandler : IUIAutomationFocusChangedEventHandler
 public:
     FocusChangedEventHandler(IUIAutomation* automation, AutomationEventHandle* pceh, LayoutController* layoutController, bool passwordCapsLock = false, HKL passwordLayout = 0x0);
     bool elementChanged(bool reset);
+    void newElement();
 
     HRESULT QueryInterface(REFIID riid, LPVOID *ppvObj);
     HRESULT activateTextChangedHandler(bool state);

@@ -24,6 +24,11 @@ bool FocusChangedEventHandler::elementChanged(bool reset)
     return o;
 }
 
+void FocusChangedEventHandler::newElement()
+{
+    _elementChanged = true;
+}
+
 HRESULT FocusChangedEventHandler::QueryInterface(const IID &riid, LPVOID *ppvObj)
 {
     // Always set out parameter to NULL, validating it first.
