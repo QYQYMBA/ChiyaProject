@@ -1,4 +1,4 @@
-QT += core gui
+QT += core gui network
 
 TEMPLATE = lib
 CONFIG += staticlib
@@ -12,12 +12,14 @@ CONFIG += c++11
 SOURCES += \
     automationeventhandle.cpp \
     correctlayout.cpp \
+    dicitionariedownloader.cpp \
     focuschangedeventhandler.cpp \
     layoutchecker.cpp
 
 HEADERS += \
     automationeventhandle.h \
     correctlayout.h \
+    dicitionariedownloader.h \
     focuschangedeventhandler.h \
     layoutchecker.h
 

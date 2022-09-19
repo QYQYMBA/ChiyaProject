@@ -7,6 +7,7 @@
 #include <fstream>
 #include <queue>
 
+#include "dicitionariedownloader.h"
 #include "winapiadapter.h"
 
 const int MAXNAMELENGTH = 30;
@@ -435,6 +436,29 @@ bool CorrectLayout::loadDictionaries()
         qDebug() << "Start loading " << QString::fromWCharArray(name) << "(" << WinApiAdapter::decToHex(_layoutsList[i]) << ") dictionary";
 
         QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[i]) + ".txt";
+        if (!QFile::exists(path))
+        {
+            DicitionarieDownloader* downloader;
+            downloader = new DicitionarieDownloader();
+            downloader->getData(WinApiAdapter::decToHex(_layoutsList[i]) + ".txt");
+            QTimer timer;
+            timer.setSingleShot(true);
+            QEventLoop loop;
+            connect( downloader, &DicitionarieDownloader::onReady, &loop, &QEventLoop::quit);
+            connect( &timer, &QTimer::timeout, &loop, &QEventLoop::quit );
+            timer.start(30000);
+            loop.exec();
+            if(timer.isActive())
+            {
+                qDebug() << "Dictionary file downloaded!";
+            }
+            else
+            {
+                qDebug() << "Dictionary file download failed!";
+                return false;
+            }
+
+        }
         if (QFile::exists(path))
         {
             if(!_layoutChecker.load(path, _layoutsList[i], check))
@@ -445,8 +469,7 @@ bool CorrectLayout::loadDictionaries()
         }
         else
         {
-            qDebug() << "No dictionary file!";
-            return false;
+            qDebug() << "No dictionary file found!";
         }
         qDebug() << "Finish loading " << QString::fromWCharArray(name) << " dictionary";
     }

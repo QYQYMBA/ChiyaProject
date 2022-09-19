@@ -26,8 +26,9 @@ struct LayoutCorrectionSettings
     Key shortcutSelect;
 };
 
-class CorrectLayout
+class CorrectLayout : public QObject
 {
+    Q_OBJECT
 public:
     CorrectLayout(HWND hwnd, LayoutController* _layoutContoller);
     ~CorrectLayout();

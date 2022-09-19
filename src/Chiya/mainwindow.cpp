@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QtNetwork>
+#include <QFuture>
 #include <QtXml>
 
 #include "windows.h"

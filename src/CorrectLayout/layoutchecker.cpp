@@ -40,7 +40,7 @@ bool LayoutChecker::load(const QString filename, const HKL layout, const bool ac
     QString noShift = in.readLine().toUtf8();
     for (int i = 0; i < sizeof(vkCodes)/sizeof(int); i++){
         _dictionaries[layout].first.first[vkCodes[i]] = noShift[i];
-        possibleKeys[vkCodes[i]]++;
+        _possibleKeys[vkCodes[i]]++;
     }
 
     QString shift = in.readLine();
@@ -247,8 +247,8 @@ void LayoutChecker::changeWordLayout(QString& word, const HKL layout)
 
 bool LayoutChecker::isKeyInDictionary(int vkCode)
 {
-    auto it = possibleKeys.find(vkCode);
-    return (it != possibleKeys.end());
+    auto it = _possibleKeys.find(vkCode);
+    return (it != _possibleKeys.end());
 }
 
 QString LayoutChecker::getAlphabet(HKL layout)

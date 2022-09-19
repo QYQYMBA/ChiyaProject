@@ -30,7 +30,7 @@ public:
 private:
     Dictionaries _dictionaries;
     Activations _activations;
-    std::map<int, int> possibleKeys;
+    std::map<int, int> _possibleKeys;
     LayoutController* _layoutController;
     std::vector<HKL> _layoutsList;
 
