@@ -375,7 +375,7 @@ void CorrectLayout::checkLayout(const bool finished)
 {
     if (_state == SwitcherState::WORKING) {
         QString wordToCheck = _currentWord;
-        HKL layout = _layoutChecker.checkLayout(wordToCheck, false);
+        HKL layout = _layoutChecker.checkLayout(wordToCheck, false, _lastLayout);
         if (layout != nullptr && layout != _lastLayout) {
             int start = _position - _currentWord.size();
             int end = _currentText.indexOf(' ', start);

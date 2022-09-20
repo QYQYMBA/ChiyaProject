@@ -95,7 +95,7 @@ void LayoutChecker::generateEdits(const QString& word, std::vector<QString>& res
     }
 }
 
-HKL LayoutChecker::checkLayout(const QString& word, const bool finished) {
+HKL LayoutChecker::checkLayout(const QString& word, const bool finished, HKL currentLayout) {
     QString alphabet = "";
 
     std::vector<QString> edits;
@@ -115,7 +115,11 @@ HKL LayoutChecker::checkLayout(const QString& word, const bool finished) {
         }
     }
 
-    const HKL layout = identifyLayout(translatedWord);
+    HKL layout;
+    if (currentLayout == 0)
+        layout = identifyLayout(translatedWord);
+    else
+        layout = currentLayout;
 
     if (layout == nullptr) {
         return nullptr;

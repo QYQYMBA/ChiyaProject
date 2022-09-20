@@ -1,6 +1,7 @@
 #include "dicitionariedownloader.h"
 #include <QCoreApplication>
 #include <QFileInfo>
+#include <QDir>
 
 DicitionarieDownloader::DicitionarieDownloader(QObject *parent) : QObject(parent)
 {
@@ -35,6 +36,9 @@ void DicitionarieDownloader::finished()
         qDebug() << "ERROR";
         qDebug() << _reply->errorString();
     } else {
+        QDir dir("" + QCoreApplication::applicationDirPath() + "\\" + "Dictionaries/");
+        if (!dir.exists())
+            dir.mkpath(".");
         QString path = "" + QCoreApplication::applicationDirPath() + "\\" + "Dictionaries/" + _hkl;
         qDebug() << path;
         QFile *file = new QFile(path);

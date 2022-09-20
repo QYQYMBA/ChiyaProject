@@ -21,7 +21,7 @@ public:
     LayoutChecker(LayoutController* lc);
 
     bool load(const QString filename, const HKL layout, const bool activated = true);
-    HKL checkLayout(const QString& word, const bool finished);
+    HKL checkLayout(const QString& word, const bool finished, HKL currentLayout = 0);
     HKL identifyLayout(const QString& word);
     void changeWordLayout(QString& word, const HKL layout);
     bool isKeyInDictionary(int vkCode);
