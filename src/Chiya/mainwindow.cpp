@@ -272,7 +272,7 @@ void MainWindow::checkUpdate()
             return;
          QVersionNumber newVersion = QVersionNumber::fromString(component.firstChild().toText().data());
          QVersionNumber currentVersion = QVersionNumber::fromString(QApplication::applicationVersion());
-         if(currentVersion <= newVersion)
+         if(currentVersion >= newVersion)
          {
              if(!MainWindow::isShowNoUpdate())
              {
