@@ -19,6 +19,12 @@ bool LayoutChecker::load(const QString filename, const HKL layout, const bool ac
 {
     int vkCodes[] = {VK_SPACE,192,49,50,51,52,53,54,55,56,57,48,189,187,81,87,69,82,84,89,85,73,79,80,219,221,220,65,83,68,70,71,72,74,75,76,186,222,90,88,67,86,66,78,77,188,190,191};
 
+    if(_dictionaries.find(layout) != _dictionaries.end())
+    {
+        qDebug() << "Dictionarie is already loaded!";
+        return true;
+    }
+
     Words* words = &_dictionaries[layout].second;
     struct stat buffer;
 

@@ -190,6 +190,9 @@ QString AutomationEventHandle::getElementText(IUIAutomationElement* element)
 
 HRESULT AutomationEventHandle::HandleAutomationEvent(IUIAutomationElement *sender, EVENTID eventId)
 {
+    if(!((CorrectLayout*)_cl)->isRunning())
+        return S_FALSE;
+
     QString currentText = getElementText(sender);
     if (_oldText == currentText)
         return S_FALSE;

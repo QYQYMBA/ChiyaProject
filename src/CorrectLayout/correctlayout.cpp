@@ -26,6 +26,8 @@ CorrectLayout::CorrectLayout(HWND hwnd, LayoutController* layoutController)
     _changeLayout = 0x0;
     _oldLayout = 0x0;
     _position = -1;
+
+    qDebug() << "Start loading dictionaries";
 }
 
 CorrectLayout::~CorrectLayout()
@@ -52,18 +54,28 @@ bool CorrectLayout::startCl()
 
     loadSettings();
 
+    qDebug() << "CorrectLayout initialization";
+
     if(!_initialized)
+        init();
+
+    if(!loadDictionaries())
     {
-        if(!init())
-            return false;
-    }
-    else
-    {
-        if(!reinitialize())
-            return false;
+        qDebug() << "Can't load all dictionaries";
+        return false;
     }
 
+    qDebug() << "Initialization finished successfully";
+
+    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonUp, &CorrectLayout::handleKey, this, true);
+    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
+    _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
+    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
+    _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
+
     _lastLayout = _layoutController->getLayout();
+
+    _state = SwitcherState::SEARCHING;
 
     _running = true;
 
@@ -77,6 +89,12 @@ bool CorrectLayout::stopCl()
 {
     if(!_running)
         return false;
+
+    _state = SwitcherState::STOPED;
+
+    QtGlobalInput::removeKeyPress(_keyPressId);
+    QtGlobalInput::removeMousePress(_mousePressId);
+    QtGlobalInput::removeWindowSwitch(_windowSwitchId);
 
     _running = false;
 
@@ -110,21 +128,7 @@ bool CorrectLayout::init()
     if(FAILED(hr))
         qDebug() << "Focus changed event handler can't be added";
 
-    qDebug() << "Start loading dictionaries";
-
-    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonUp, &CorrectLayout::handleKey, this, true);
-    _mousePressId = QtGlobalInput::waitForMousePress(0, EventType::ButtonDown, &CorrectLayout::handleMouse, this, true);
-    _keyLlPressId = QtGlobalInput::setLlKeyboardHook(0, EventType::ButtonDown, &CorrectLayout::handleLlKey, this, false);
-    QtGlobalInput::removeLlKeyboardHook(_keyLlPressId);
-    _windowSwitchId = QtGlobalInput::setWindowSwitch(&CorrectLayout::windowSwitched, this);
-
     _initialized = true;
-
-    if(!loadDictionaries())
-    {
-        qDebug() << "Can't load all dictionaries";
-        return false;
-    }
 
     qDebug() << "Initialization finished successfully";
 
@@ -481,6 +485,7 @@ bool CorrectLayout::loadDictionaries()
 
 void CorrectLayout::handleValueChange(QString newText)
 {
+    qDebug() << newText;
 
     if(_state == SwitcherState::STOPED)
         return;
@@ -494,7 +499,7 @@ void CorrectLayout::handleValueChange(QString newText)
     bool elementChanged = _fceh->elementChanged(true);
 
     HKL newLayout = _layoutController->getLayout();
-    if(newText.size() < 2 && !elementChanged && newLayout != _lastLayout)
+    if(newText.size() > 2 && !elementChanged && newLayout != _lastLayout)
     {
         _state = SwitcherState::PAUSED;
     }
@@ -672,7 +677,6 @@ bool CorrectLayout::handleLlKey(int nCode, WPARAM wParam, LPARAM lParam)
 
     SwitcherState oldState = _state;
     _state = SwitcherState::CHANGING;
-
     if (key != nullptr) {
         unsigned long vkCode = key->vkCode;
 

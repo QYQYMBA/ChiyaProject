@@ -67,12 +67,16 @@ HRESULT FocusChangedEventHandler::activateTextChangedHandler(bool state)
             return hr;
         }
     }
+    return S_OK;
 }
 
 HRESULT FocusChangedEventHandler::HandleFocusChangedEvent(IUIAutomationElement *sender)
 {
+    if(!_layoutController->isRunning())
+        return S_FALSE;
+
     HWND hwnd = GetForegroundWindow();
-    if (hwnd == NULL) return false;
+    if (hwnd == NULL) return S_FALSE;
 
     DWORD foregroundPid;
     if (GetWindowThreadProcessId(hwnd, &foregroundPid) == 0) return false;
