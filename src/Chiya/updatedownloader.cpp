@@ -50,8 +50,8 @@ void UpdateDownloader::finished()
         if(file->open(QFile::WriteOnly)){
             file->write(_reply->readAll());
             file->close();
-        qDebug() << "Downloading is completed";
-        emit onReady();
+            qDebug() << "Downloading is completed";
+            emit onReady();
         }
     }
 }

@@ -177,14 +177,12 @@ void LayoutControllerSettingsWindow::keyPressEvent(QKeyEvent *event)
 
         QString shortcut = "";
         if(key->ctrl)
-            shortcut += "Ctrl +";
+            shortcut += "Ctrl + ";
         if(key->shift)
-            shortcut += "Shift +";
+            shortcut += "Shift + ";
         if(key->alt)
-            shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(key->vkCode, MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+            shortcut += "Alt + ";
+        shortcut += WinApiAdapter::vkToString(key->vkCode);
 
         _shortcutActivateKey = key;
 
@@ -249,7 +247,7 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
 
     QModelIndex index = ui->lsLayoutsListViewLs->currentIndex();
     QString itemText;
-    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
+    itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     _settings.setValue("runOnStart", ui->gAutoStartCheckBoxLs->isChecked());
 
@@ -264,6 +262,14 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
         _settings.setValue("layouts/" + itemText + "/shortcut/activate/qtCode", _shortcutActivateKey->scanCode);
         _settings.setValue("layouts/" + itemText + "/shortcut/activate/vkCode", _shortcutActivateKey->vkCode);
     }
+    else
+    {
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/ctrl");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/shift");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/alt");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/qtCode");
+        _settings.remove("layouts/" + itemText + "/shortcut/activate/vkCode");
+    }
 
     _settings.setValue("layouts/" + itemText + "/shortcut/select/active", _shortcutSelectKey->vkCode != 0);
     if(_shortcutSelectKey->vkCode != 0)
@@ -273,6 +279,14 @@ void LayoutControllerSettingsWindow::handleLsApplyButton()
         _settings.setValue("layouts/" + itemText + "/shortcut/select/alt", _shortcutSelectKey->alt);
         _settings.setValue("layouts/" + itemText + "/shortcut/select/qtCode", _shortcutSelectKey->scanCode);
         _settings.setValue("layouts/" + itemText + "/shortcut/select/vkCode", _shortcutSelectKey->vkCode);
+    }
+    else
+    {
+        _settings.remove("layouts/" + itemText + "/shortcut/select/ctrl");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/shift");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/alt");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/qtCode");
+        _settings.remove("layouts/" + itemText + "/shortcut/select/vkCode");
     }
 }
 
@@ -294,7 +308,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
 
     _index = ui->lsLayoutsListViewLs->currentIndex();
     QString itemText;
-    itemText = itemText.fromStdString(WinApiAdapter::hklToStr(_layoutsList[_index.row()]));
+    itemText = WinApiAdapter::hklToStr(_layoutsList[_index.row()]);
 
     ui->lsActiveCheckBoxLs->setChecked(_settings.value("layouts/" + itemText + "/deactivated").toBool());
 
@@ -309,9 +323,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
            shortcut += "Shift +";
         if(_settings.value("layouts/" + itemText + "/shortcut/activate/alt").toBool())
             shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/activate/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+        shortcut += WinApiAdapter::vkToString(_settings.value("layouts/" + itemText + "/shortcut/activate/vkCode").toUInt());
 
         ui->lsShortcutActivateLineEditLs->setText(shortcut);
    }
@@ -329,9 +341,7 @@ void LayoutControllerSettingsWindow::handleLsSelectionChanged(){
            shortcut += "Shift +";
         if(_settings.value("layouts/" + itemText + "/shortcut/select/alt").toBool())
             shortcut += "Alt +";
-        std::string s = "";
-        s += MapVirtualKey(_settings.value("layouts/" + itemText + "/shortcut/select/vkCode").toInt(), MAPVK_VK_TO_CHAR);
-        shortcut += QString::fromStdString(s);
+        shortcut += WinApiAdapter::vkToString(_settings.value("layouts/" + itemText + "/shortcut/select/vkCode").toUInt());
 
         ui->lsShortcutSelectLineEditLs->setText(shortcut);
    }

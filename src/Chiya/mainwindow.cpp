@@ -7,11 +7,13 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QtNetwork>
+#include <QFuture>
 #include <QtXml>
 
 #include "windows.h"
 #include "adminrights.h"
 #include "layoutcontrollersettingswindow.h"
+#include "correctlayoutsettingswindow.h"
 #include "mainsettingswindow.h"
 #include "aboutwindow.h"
 
@@ -23,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , _layoutController((HWND)MainWindow::winId())
+    , _correctLayout((HWND)MainWindow::winId(), &_layoutController)
     , _closing(false)
 {
     ui->setupUi(this);
@@ -32,6 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->lcStateButton, SIGNAL (released()), this, SLOT (handleLcStateButton()));
     connect(ui->lcSettingsButton, SIGNAL (released()), this, SLOT (handleLcSettingsButton()));
+
+    connect(ui->clStateButton, SIGNAL (released()), this, SLOT (handleClStateButton()));
+    connect(ui->clSettingsButton, SIGNAL (released()), this, SLOT (handleClSettingsButton()));
 
     connect(ui->actionMainSettings, SIGNAL (triggered()), this, SLOT (handleActionSettingsTriggered()));
     connect(ui->actionAbout, SIGNAL (triggered()), this, SLOT (handleActionHelpTriggered()));
@@ -88,7 +94,20 @@ void MainWindow::loadSettings()
     if(settings.value("runOnStart").toBool())
     {
         if(_layoutController.start())
+        {
             ui->lcStateButton->setText("Stop");
+            ui->clStateButton->setEnabled(true);
+        }
+    }
+
+    settings.endGroup();
+
+    settings.beginGroup("CorrectLayout");
+
+    if(settings.value("runOnStart").toBool())
+    {
+        if(_correctLayout.startCl())
+            ui->clStateButton->setText("Stop");
     }
 
     settings.endGroup();
@@ -140,23 +159,58 @@ void MainWindow::handleLcStateButton()
     if(_layoutController.isRunning())
     {
         if(_layoutController.stop())
+        {
+            _correctLayout.stopCl();
             ui->lcStateButton->setText("Start");
+            ui->clStateButton->setEnabled(false);
+            ui->clStateButton->setText("Start");
+        }
     }
     else
     {
         if(_layoutController.start())
+        {
             ui->lcStateButton->setText("Stop");
+            ui->clStateButton->setEnabled(true);
+        }
     }
 }
 
 void MainWindow::handleLcSettingsButton()
 {
     _layoutController.stop();
+    _correctLayout.stopCl();
+    ui->clStateButton->setEnabled(false);
+    ui->clStateButton->setText("Start");
     ui->lcStateButton->setText("Start");
 
     LayoutControllerSettingsWindow* layoutControllerSettingsWindow = new LayoutControllerSettingsWindow(this);
     layoutControllerSettingsWindow->setModal(true);
     layoutControllerSettingsWindow->show();
+}
+
+void MainWindow::handleClStateButton()
+{
+    if(_correctLayout.isRunning())
+    {
+        if(_correctLayout.stopCl())
+            ui->clStateButton->setText("Start");
+    }
+    else
+    {
+        if(_correctLayout.startCl())
+            ui->clStateButton->setText("Stop");
+    }
+}
+
+void MainWindow::handleClSettingsButton()
+{
+    _correctLayout.stopCl();
+    ui->clStateButton->setText("Start");
+
+    CorrectLayoutSettingsWindow* correctLayoutSettingsWindow = new CorrectLayoutSettingsWindow(this);
+    correctLayoutSettingsWindow->setModal(true);
+    correctLayoutSettingsWindow->show();
 }
 
 void MainWindow::handleActionSettingsTriggered()

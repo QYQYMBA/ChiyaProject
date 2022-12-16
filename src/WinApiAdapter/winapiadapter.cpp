@@ -39,7 +39,6 @@ QString WinApiAdapter::GetWindowExeName(HWND hwnd)
     int lastSlash = path.lastIndexOf('\\');
     QString exeName = path.mid(lastSlash + 1, path.length() - lastSlash);
 
-    qDebug() << exeName;
     return exeName;
 }
 
@@ -67,11 +66,75 @@ QString WinApiAdapter::GetWindowClass(HWND hwnd)
     return className;
 }
 
-std::string WinApiAdapter::hklToStr(HKL hkl)
+QString WinApiAdapter::hklToStr(HKL hkl)
 {
     std::stringstream s;
     s << hkl;
-    return s.str().substr(8,8);
+    std::string ss = s.str().substr(8,8);
+    return QString::fromStdString(ss);
+}
+
+QString WinApiAdapter::vkToString(uint vkCode)
+{
+    if (vkCode == VK_PAUSE)
+        return "Break";
+    if (vkCode == VK_SNAPSHOT)
+        return "PRTSC";
+    if (vkCode == VK_SCROLL)
+        return "SCRLK";
+    if (vkCode == VK_INSERT)
+        return "Insert";
+    if (vkCode == VK_HOME)
+        return "Home";
+    if (vkCode == VK_PRIOR)
+        return "PG UP";
+    if (vkCode == VK_NEXT)
+        return "PG DN";
+    if (vkCode == VK_END)
+        return "End";
+    if (vkCode == VK_DELETE)
+        return "Del";
+    if (vkCode == VK_UP)
+        return "Up";
+    if (vkCode == VK_DOWN)
+        return "Down";
+    if (vkCode == VK_LEFT)
+        return "Left";
+    if (vkCode == VK_RIGHT)
+        return "Right";
+    if (vkCode == VK_F1)
+        return "F1";
+    if (vkCode == VK_F2)
+        return "F2";
+    if (vkCode == VK_F3)
+        return "F3";
+    if (vkCode == VK_F4)
+        return "F4";
+    if (vkCode == VK_F5)
+        return "F5";
+    if (vkCode == VK_F6)
+        return "F6";
+    if (vkCode == VK_F7)
+        return "F7";
+    if (vkCode == VK_F8)
+        return "F8";
+    if (vkCode == VK_F9)
+        return "F9";
+    if (vkCode == VK_F10)
+        return "F10";
+    if (vkCode == VK_F11)
+        return "F11";
+    if (vkCode == VK_F12)
+        return "F12";
+    if (vkCode == VK_ESCAPE)
+        return "ESC";
+    if (vkCode == VK_NUMLOCK)
+        return "Numlock";
+    if (vkCode == VK_CAPITAL)
+        return "Capslock";
+    std::string s = "";
+    s += MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR);
+    return QString::fromStdString(s);
 }
 
 std::vector<HKL> WinApiAdapter::getLayoutsList()
@@ -112,16 +175,19 @@ std::vector<HKL> WinApiAdapter::getLayoutsList()
 
             if(QString::fromWCharArray(name) == order[i])
             {
-                list.push_back(layoutsList[j]);
-                layoutsList[j] = 0;
-                break;
+                if (layoutsList[j] != 0x0)
+                {
+                    list.push_back(layoutsList[j]);
+                    layoutsList[j] = 0x0;
+                    break;
+                }
             }
         }
     }
 
     for(int i = 0; i < n; i++)
     {
-        if(layoutsList[i] != 0)
+        if(layoutsList[i] != 0x0)
         {
             list.push_back(layoutsList[i]);
         }
@@ -212,6 +278,179 @@ void WinApiAdapter::SendKeyPress(int vkCode, bool shift, bool ctrl, bool alt)
         SendInput(1, &altUp, sizeof(INPUT));
     }
 
+}
+
+void WinApiAdapter::ReplaceUnicodeString(QString s)
+{
+    INPUT* inputs = new INPUT[s.size()*4];
+    int i = 0;
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = 0;
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = VK_BACK;
+        inputs[i].ki.dwFlags = 0;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = c.unicode();
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = 0;
+        inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+
+    SendInput(s.size()*4, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
+void WinApiAdapter::SendUnicodeString(QString s)
+{
+    INPUT* inputs = new INPUT[s.size()*2];
+    int i = 0;
+    for (QChar c : s)
+    {
+        inputs[i].type = INPUT_KEYBOARD;
+        inputs[i].ki.wScan = c.unicode();
+        inputs[i].ki.time = 0;
+        inputs[i].ki.dwExtraInfo = 0;
+
+        inputs[i].ki.wVk = 0;
+        inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+        i++;
+
+        inputs[i] = inputs[i-1];
+        inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+        i++;
+    }
+
+    SendInput(s.size()*2, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
+void WinApiAdapter::SendUnicodeChar(QChar c)
+{
+    INPUT* inputs = new INPUT[2];
+    int i = 0;
+
+    inputs[i].type = INPUT_KEYBOARD;
+    inputs[i].ki.wScan = c.unicode();
+    inputs[i].ki.time = 0;
+    inputs[i].ki.dwExtraInfo = 0;
+
+    inputs[i].ki.wVk = 0;
+    inputs[i].ki.dwFlags = KEYEVENTF_UNICODE;
+    i++;
+
+    inputs[i] = inputs[i-1];
+    inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
+    i++;
+
+    SendInput(2, inputs, sizeof(INPUT));
+    delete[] inputs;
+}
+
+void WinApiAdapter::SendKeyPress(KeyPress kp)
+{
+    INPUT down = MakeKeyInput(kp.getVkCode(), true);
+    INPUT up = MakeKeyInput(kp.getVkCode(), false);
+
+    if(kp.isCtrlPressed())
+    {
+        INPUT ctrlDown = MakeKeyInput(VK_CONTROL, true);
+        SendInput(1, &ctrlDown, sizeof(INPUT));
+    }
+
+    if(kp.isShiftPressed())
+    {
+        INPUT shiftDown = MakeKeyInput(VK_SHIFT, true);
+        SendInput(1, &shiftDown, sizeof(INPUT));
+    }
+
+    if(kp.isAltPressed())
+    {
+        INPUT altDown = MakeKeyInput(VK_MENU, true);
+        SendInput(1, &altDown, sizeof(INPUT));
+    }
+
+    SendInput(1, &down, sizeof(INPUT));
+    SendInput(1, &up, sizeof(INPUT));
+
+    if(kp.isCtrlPressed())
+    {
+        INPUT ctrlUp = MakeKeyInput(VK_CONTROL, false);
+        SendInput(1, &ctrlUp, sizeof(INPUT));
+    }
+
+    if(kp.isShiftPressed())
+    {
+        INPUT shiftUp = MakeKeyInput(VK_SHIFT, false);
+        SendInput(1, &shiftUp, sizeof(INPUT));
+    }
+
+    if(kp.isAltPressed())
+    {
+        INPUT altUp = MakeKeyInput(VK_MENU, false);
+        SendInput(1, &altUp, sizeof(INPUT));
+    }
+}
+
+void WinApiAdapter::SendKeyPresses(QVector<KeyPress> keyPresses)
+{
+    INPUT pInputs[1000];
+    UINT n = 0;
+    for(KeyPress kp : keyPresses)
+    {
+
+        if(kp.isCtrlPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_CONTROL, true);
+        }
+
+        if(kp.isShiftPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_SHIFT, true);
+        }
+
+        if(kp.isAltPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_MENU, true);
+        }
+
+        pInputs[++n] = MakeKeyInput(kp.getVkCode(), true);
+        pInputs[++n] = MakeKeyInput(kp.getVkCode(), false);
+
+        if(kp.isCtrlPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_CONTROL, false);
+        }
+
+        if(kp.isShiftPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_SHIFT, false);
+        }
+
+        if(kp.isAltPressed())
+        {
+            pInputs[++n] = MakeKeyInput(VK_MENU, false);
+        }
+    }
+    SendInput(n, pInputs, sizeof(INPUT));
 }
 
 WinApiAdapter::WinApiAdapter()

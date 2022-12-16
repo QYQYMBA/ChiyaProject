@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-VERSION = 1.5.3
+VERSION = 2.0.0
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -12,6 +12,7 @@ VERSION = 1.5.3
 
 SOURCES += \
     aboutwindow.cpp \
+    correctlayoutsettingswindow.cpp \
     layoutcontrollersettingswindow.cpp \
     main.cpp \
     mainsettingswindow.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 
 HEADERS += \
     aboutwindow.h \
+    correctlayoutsettingswindow.h \
     layoutcontrollersettingswindow.h \
     mainsettingswindow.h \
     mainwindow.h \
@@ -27,6 +29,7 @@ HEADERS += \
 
 FORMS += \
     aboutwindow.ui \
+    correctlayoutsettingswindow.ui \
     layoutcontrollersettingswindow.ui \
     mainsettingswindow.ui \
     mainwindow.ui
