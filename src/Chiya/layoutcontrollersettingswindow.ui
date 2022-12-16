@@ -152,6 +152,22 @@
       <enum>Qt::RichText</enum>
      </property>
     </widget>
+    <widget class="QCheckBox" name="gEnableQtAppsCheckBoxLs">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>211</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>If this function is enabled, Chiya will work in apps that are built using Qt. Some Qt apps may hang when trying to swith layout in them.</string>
+     </property>
+     <property name="text">
+      <string>Enable Qt apps</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="layoutSpecific">
     <attribute name="title">

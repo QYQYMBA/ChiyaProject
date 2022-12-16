@@ -33,6 +33,7 @@ LayoutControllerSettingsWindow::LayoutControllerSettingsWindow(QWidget *parent)
     connect(ui->gApplyButtonLs, SIGNAL (clicked()), this, SLOT (handleGApplyButton()));
     connect(ui->gAutoStartCheckBoxLs, SIGNAL (clicked()), this, SLOT (handleGAutoStart()));
     connect(ui->gChangeRegistryCheckBoxLs, SIGNAL(clicked()), this, SLOT(handleGChangeRegistry()));
+    connect(ui->gEnableQtAppsCheckBoxLs, SIGNAL(clicked()), this, SLOT(handleGEnableQt()));
 
     connect(ui->lsApplyButtonLs, SIGNAL (clicked()), this, SLOT (handleLsApplyButton()));
     connect(ui->lsShortcutActivateButtonLs, SIGNAL (clicked()), this, SLOT (handleLsShortcutActivateButton()));
@@ -91,6 +92,8 @@ void LayoutControllerSettingsWindow::loadSettings()
     ui->mainTabs->setCurrentIndex(0);
 
     ui->gAutoStartCheckBoxLs->setChecked(_settings.value("runOnStart").toBool());
+    ui->gEnableQtAppsCheckBoxLs->setChecked(_settings.value("enableQtApps").toBool());
+
     if(AdminRights::IsRunAsAdministrator())
         ui->gChangeRegistryCheckBoxLs->setChecked(_settings.value("changeRegistry").toBool());
     else
@@ -374,6 +377,8 @@ void LayoutControllerSettingsWindow::handleGApplyButton()
 
     _settings.setValue("changeRegistry", ui->gChangeRegistryCheckBoxLs->isChecked());
 
+    _settings.setValue("enableQtApps", ui->gEnableQtAppsCheckBoxLs->isChecked());
+
     QString toggleValue;
     if(ui->gShiftAltButtonLs->isChecked())
         toggleValue = "1";
@@ -394,6 +399,12 @@ void LayoutControllerSettingsWindow::handleGAutoStart()
 }
 
 void LayoutControllerSettingsWindow::handleGChangeRegistry()
+{
+    _gChanged = true;
+}
+
+
+void LayoutControllerSettingsWindow::handleGEnableQt()
 {
     _gChanged = true;
 }

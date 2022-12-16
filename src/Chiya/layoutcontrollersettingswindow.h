@@ -35,6 +35,7 @@ private slots:
     void handleGApplyButton();
     void handleGAutoStart();
     void handleGChangeRegistry();
+    void handleGEnableQt();
 
     void handleEApplyButton();
     void handleEWhiteList();

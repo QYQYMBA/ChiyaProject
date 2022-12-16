@@ -27,6 +27,7 @@ public:
     bool start();
     bool stop();
     bool isRunning();
+    bool qtEnabled();
     HKL getLayout();
     bool isRegistryChanged();
     void switchLayout(HKL hkl);
@@ -60,6 +61,7 @@ private:
 
     short _toggleValue;
     bool _changeRegistry;
+    bool _enableQt;
     bool _registryChanged = false;
 
     bool _running;

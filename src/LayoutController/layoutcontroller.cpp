@@ -82,6 +82,8 @@ void LayoutController::loadSettings()
     else
         _changeRegistry = false;
 
+    _enableQt = _settings.value("enableQtApps").toBool();
+
     _whiteList = _settings.value("exceptions/isWhiteList").toBool();
 
     getExceptionsList();
@@ -134,6 +136,11 @@ bool LayoutController::isRunning()
     return _running;
 }
 
+bool LayoutController::qtEnabled()
+{
+    return _enableQt;
+}
+
 HKL LayoutController::getLayout()
 {
     if(_running)
@@ -184,10 +191,13 @@ void LayoutController::switchLayout(HKL layout)
     }
 
     //In Qt apps WM_INPUTLANGCHANGEREQUEST causes lags
-    QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
-    if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+    if(!_enableQt)
     {
-        return;
+        QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
+        if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+        {
+            return;
+        }
     }
 
     if(!_changeRegistry)
@@ -411,14 +421,17 @@ void LayoutController::windowSwitched(HWND hwnd)
     }
 
     //In Qt apps WM_INPUTLANGCHANGEREQUEST causes lags
-    QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
-    if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+    if(!_enableQt)
     {
-        setSystemShortcut();
-    }
-    else
-    {
-        removeSystemShortcut();
+        QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
+        if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+        {
+            setSystemShortcut();
+        }
+        else
+        {
+            removeSystemShortcut();
+        }
     }
 }
 

@@ -182,15 +182,18 @@ void CorrectLayout::windowSwitched(HWND hwnd)
         _exception = false;
     }
 
-    QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
-    if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+    if(!_layoutController->qtEnabled())
     {
-        _exception = true;
-        return;
-    }
-    else
-    {
-        _exception = false;
+        QString windowClassName(WinApiAdapter::GetWindowClass(GetForegroundWindow()));
+        if (windowClassName.contains("Qt") && windowClassName.contains("QWindow"))
+        {
+            _exception = true;
+            return;
+        }
+        else
+        {
+            _exception = false;
+        }
     }
 }
 
