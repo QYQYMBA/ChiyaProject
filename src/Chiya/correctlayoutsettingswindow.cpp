@@ -486,6 +486,9 @@ void CorrectLayoutSettingsWindow::handleLsRemoveButton()
         if(word != line)
         {
             newFile += line + "\n";
+        }
+        else
+        {
             exists = true;
         }
     }
