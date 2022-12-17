@@ -395,6 +395,8 @@ void CorrectLayoutSettingsWindow::handleLsAddButton()
 
     QString oldLine = "";
 
+    bool placed = false;
+
     while (!in.atEnd())
     {
         QString line = in.readLine();
@@ -407,8 +409,11 @@ void CorrectLayoutSettingsWindow::handleLsAddButton()
             return;
         }
 
-        if(word > oldLine && word < line)
+        if(word > oldLine && word < line  && !placed)
+        {
             newFile += word + "\n";
+            placed = true;
+        }
         newFile += line + "\n";
         oldLine = line;
     }
@@ -505,6 +510,8 @@ void CorrectLayoutSettingsWindow::handleLsRemoveButton()
     out.setEncoding(QStringConverter::Encoding::Utf8);
 
     out << newFile;
+
+    outputFile.close();
 }
 
 void CorrectLayoutSettingsWindow::handleLsApplyButton()
