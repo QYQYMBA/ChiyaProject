@@ -31,6 +31,8 @@ private slots:
     void handleLsShortcutSelectButton();
     void handleLsActivateCheckBox();
     void handleLsAutoCheckBox();
+    void handleLsAddButton();
+    void handleLsRemoveButton();
     void handleLsSelectionChanged();
 
     void handleGApplyButton();

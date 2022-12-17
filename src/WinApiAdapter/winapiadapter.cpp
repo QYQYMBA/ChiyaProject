@@ -210,7 +210,9 @@ void WinApiAdapter::SetKeyboardLayout(HKL layout) {
         PostMessage(prevOwner, WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
     }
     else
+    {
         PostMessage(foreground, WM_INPUTLANGCHANGEREQUEST, NULL, (LPARAM)layout);
+    }
 }
 
 INPUT WinApiAdapter::MakeKeyInput(int vkCode, bool down)

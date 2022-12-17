@@ -6,6 +6,7 @@
 
 #include <QStringListModel>
 #include <QMessageBox>
+#include <QFile>
 
 #include "winapiadapter.h"
 
@@ -45,6 +46,8 @@ CorrectLayoutSettingsWindow::CorrectLayoutSettingsWindow(QWidget *parent) :
     connect(ui->lsShortcutSelectButtonCl, SIGNAL (clicked()), this, SLOT (handleLsShortcutSelectButton()));
     connect(ui->lsActiveCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsActivateCheckBox()));
     connect(ui->lsAutoCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleLsAutoCheckBox()));
+    connect(ui->lsAddButtonCl, SIGNAL (clicked()), this, SLOT (handleLsAddButton()));
+    connect(ui->lsRemoveButtonCl, SIGNAL (clicked()), this, SLOT (handleLsRemoveButton()));
 
     connect(ui->eApplyButtonCl, SIGNAL (clicked()), this, SLOT (handleEApplyButton()));
     connect(ui->eWhiteListCheckBoxCl, SIGNAL (clicked()), this, SLOT (handleEWhiteList()));
@@ -345,6 +348,163 @@ void CorrectLayoutSettingsWindow::handleLsActivateCheckBox()
 void CorrectLayoutSettingsWindow::handleLsAutoCheckBox()
 {
     _lsChanged = true;
+}
+
+void CorrectLayoutSettingsWindow::handleLsAddButton()
+{
+    QString newFile;
+
+    QString word = ui->lsWordLineEditCl->text().toLower();
+
+    wchar_t name[MAXNAMELENGTH];
+    LANGID language = (LANGID)(((UINT)_layoutsList[_index.row()]) & 0x0000FFFF);
+    LCID locale = MAKELCID(language, SORT_DEFAULT);
+
+    GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
+
+    qDebug() << "Start editing " << QString::fromWCharArray(name) << "(" << WinApiAdapter::decToHex(_layoutsList[_index.row()]) << ") dictionary";
+
+    QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[_index.row()]) + ".txt";
+
+    QFile inputFile(path);
+
+    if (!inputFile.open(QFile::ReadOnly | QFile::Text))
+    {
+        qDebug() << "Can't open dictionarie file";
+        return;
+    }
+    QTextStream in(&inputFile);
+
+    QString noShift = in.readLine().toUtf8();
+
+    newFile += noShift + "\n";
+
+    QString shift = in.readLine();
+    newFile += shift + "\n";
+
+    for(QChar c : word)
+    {
+        if(!noShift.contains(c) && !shift.contains(c))
+        {
+            QMessageBox::information(this, "Wrong format!",
+                                            "Alphabet for this language doesn't have all the symbols");
+            qDebug() << "Alphabet for this language doesn't have all the symbols";
+            return;
+        }
+    }
+
+    QString oldLine = "";
+
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+
+        if(word == line)
+        {
+            QMessageBox::information(this, "Word exists!",
+                                            "This word is already exists in dicionarie");
+            qDebug() << "This word already exists";
+            return;
+        }
+
+        if(word > oldLine && word < line)
+            newFile += word + "\n";
+        newFile += line + "\n";
+        oldLine = line;
+    }
+
+    inputFile.close();
+
+    QFile outputFile(path);
+
+    if (!outputFile.open(QFile::WriteOnly | QFile::Text))
+    {
+        qDebug() << "Can't open dictionarie file";
+        return;
+    }
+
+    QTextStream out(&outputFile);
+    out.setEncoding(QStringConverter::Encoding::Utf8);
+
+    out << newFile;
+}
+
+void CorrectLayoutSettingsWindow::handleLsRemoveButton()
+{
+    QString newFile;
+
+    QString word = ui->lsWordLineEditCl->text().toLower();
+
+    wchar_t name[MAXNAMELENGTH];
+    LANGID language = (LANGID)(((UINT)_layoutsList[_index.row()]) & 0x0000FFFF);
+    LCID locale = MAKELCID(language, SORT_DEFAULT);
+
+    GetLocaleInfo(locale, LOCALE_SLANGUAGE, name, MAXNAMELENGTH);
+
+    qDebug() << "Start editing " << QString::fromWCharArray(name) << "(" << WinApiAdapter::decToHex(_layoutsList[_index.row()]) << ") dictionary";
+
+    QString path = QCoreApplication::applicationDirPath() + "/Dictionaries/" + WinApiAdapter::decToHex(_layoutsList[_index.row()]) + ".txt";
+
+    QFile inputFile(path);
+
+    if (!inputFile.open(QFile::ReadOnly | QFile::Text))
+    {
+        qDebug() << "Can't open dictionarie file";
+        return;
+    }
+    QTextStream in(&inputFile);
+
+    QString noShift = in.readLine().toUtf8();
+
+    newFile += noShift + "\n";
+
+    QString shift = in.readLine();
+    newFile += shift + "\n";
+
+    for(QChar c : word)
+    {
+        if(!noShift.contains(c) && !shift.contains(c))
+        {
+            QMessageBox::information(this, "Wrong format!",
+                                            "Alphabet for this language doesn't have all the symbols");
+            qDebug() << "Alphabet for this language doesn't have all the symbols";
+            return;
+        }
+    }
+
+    bool exists = false;
+
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+
+        if(word != line)
+        {
+            newFile += line + "\n";
+            exists = true;
+        }
+    }
+
+    if(!exists)
+    {
+        QMessageBox::information(this, "No word!",
+                                        "There is no such word in dictionarie!");
+    }
+
+    inputFile.close();
+
+    QFile outputFile(path);
+
+    if (!outputFile.open(QFile::WriteOnly | QFile::Text))
+    {
+        qDebug() << "Can't open dictionarie file";
+        return;
+    }
+
+    QTextStream out(&outputFile);
+    out.setEncoding(QStringConverter::Encoding::Utf8);
+
+    out << newFile;
 }
 
 void CorrectLayoutSettingsWindow::handleLsApplyButton()

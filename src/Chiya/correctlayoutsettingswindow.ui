@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>480</width>
-    <height>155</height>
+    <height>180</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,11 +19,11 @@
      <x>0</x>
      <y>0</y>
      <width>480</width>
-     <height>155</height>
+     <height>180</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>4</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="general">
     <attribute name="title">
@@ -128,17 +128,20 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QPushButton" name="lsApplyButtonCl">
+    <widget class="QPushButton" name="lsAddButtonCl">
      <property name="geometry">
       <rect>
-       <x>262</x>
-       <y>95</y>
-       <width>83</width>
+       <x>180</x>
+       <y>125</y>
+       <width>81</width>
        <height>23</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>Add word to dictionarie</string>
+     </property>
      <property name="text">
-      <string>Apply</string>
+      <string>Add</string>
      </property>
     </widget>
     <widget class="QPushButton" name="lsShortcutActivateButtonCl">
@@ -235,6 +238,57 @@
      </property>
      <property name="text">
       <string>Auto switch to this layout</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lsWordLineEditCl">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>125</y>
+       <width>165</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Add word to dictionarie</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="readOnly">
+      <bool>false</bool>
+     </property>
+     <property name="placeholderText">
+      <string>Word</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="lsApplyButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>95</y>
+       <width>83</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="lsRemoveButtonCl">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>125</y>
+       <width>83</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Add word to dictionarie</string>
+     </property>
+     <property name="text">
+      <string>Remove</string>
      </property>
     </widget>
    </widget>
