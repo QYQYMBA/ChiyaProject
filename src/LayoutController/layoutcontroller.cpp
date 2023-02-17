@@ -373,7 +373,7 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     bool ctrlshift = (_toggleValue == 2 && (lshift || rshift || lctrl || rctrl));
     bool shiftalt  = (_toggleValue == 1 && (lshift || rshift || lalt));
 
-    bool secondbuttonpressed = (_toggleValue == 2 && ctrl ) || (_toggleValue == 1 && (alt || lalt));
+    bool secondbuttonpressed = (_toggleValue == 2 && (ctrl || lctrl || rctrl) ) || (_toggleValue == 1 && (alt || lalt));
 
     if( ctrlshift || shiftalt )
         if( (shift || rshift || lshift) &&  secondbuttonpressed )
