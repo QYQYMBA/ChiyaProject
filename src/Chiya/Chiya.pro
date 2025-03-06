@@ -12,24 +12,19 @@ VERSION = 2.1.0
 
 SOURCES += \
     aboutwindow.cpp \
-    correctlayoutsettingswindow.cpp \
     layoutcontrollersettingswindow.cpp \
     main.cpp \
     mainsettingswindow.cpp \
-    mainwindow.cpp \
-    updatedownloader.cpp
+    mainwindow.cpp
 
 HEADERS += \
     aboutwindow.h \
-    correctlayoutsettingswindow.h \
     layoutcontrollersettingswindow.h \
     mainsettingswindow.h \
-    mainwindow.h \
-    updatedownloader.h
+    mainwindow.h
 
 FORMS += \
     aboutwindow.ui \
-    correctlayoutsettingswindow.ui \
     layoutcontrollersettingswindow.ui \
     mainsettingswindow.ui \
     mainwindow.ui
