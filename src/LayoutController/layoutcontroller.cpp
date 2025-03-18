@@ -100,7 +100,7 @@ bool LayoutController::start()
         return false;
     }
 
-    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::ButtonUp, &LayoutController::handleKey, this, true);
+    _keyPressId = QtGlobalInput::waitForKeyPress(0, EventType::All, &LayoutController::handleKey, this, true);
     _windowSwitchId = QtGlobalInput::setWindowSwitch(&LayoutController::windowSwitched, this);
 
     getLayoutSettingsList();
@@ -341,6 +341,9 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
             _externalShortcutPressed = false;
         }
     }
+    else{
+        _externalShortcutPressed = true;
+    }
 
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
@@ -383,18 +386,14 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
 
     bool secondbuttonpressed = (_toggleValue == 2 && (ctrl || lctrl || rctrl) ) || (_toggleValue == 1 && (alt || lalt));
 
-    if( ctrlshift || shiftalt )
-        if( (shift || rshift || lshift) &&  secondbuttonpressed )
-        {
-            if(keyboard.VKey == VK_SHIFT || keyboard.VKey == VK_MENU || keyboard.VKey == VK_CONTROL){
-
-                switchLayout(0);
+    if(!_externalShortcutPressed)
+    {
+        if( ctrlshift || shiftalt )
+            if( (shift || rshift || lshift) &&  secondbuttonpressed )
+            {
+                    switchLayout(0);
             }
-            else{
-
-            }
-
-        }
+    }
 }
 
 void LayoutController::windowSwitched(HWND hwnd)
