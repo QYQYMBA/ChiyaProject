@@ -25,6 +25,7 @@ LayoutController::LayoutController(HWND hwnd)
 
     _currentLayout = WinApiAdapter::GetLayoutByHwnd(GetForegroundWindow());
     _correctLayout = _currentLayout;
+    _externalShortcutPressed = false;
 }
 
 LayoutController::~LayoutController()
@@ -334,6 +335,13 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if(!_running)
         return;
 
+    if(((keyboard.VKey == VK_SHIFT || keyboard.VKey == VK_CONTROL) && _toggleValue == 2) ||
+       ((keyboard.VKey == VK_SHIFT || keyboard.VKey == VK_MENU) && _toggleValue == 1)){
+        if(keyboard.Message == WM_KEYDOWN){
+            _externalShortcutPressed = false;
+        }
+    }
+
     if(keyboard.Message != WM_KEYUP && keyboard.Message != WM_SYSKEYUP)
         return;
 
@@ -378,7 +386,14 @@ void LayoutController::handleKey(RAWKEYBOARD keyboard)
     if( ctrlshift || shiftalt )
         if( (shift || rshift || lshift) &&  secondbuttonpressed )
         {
-            switchLayout(0);
+            if(keyboard.VKey == VK_SHIFT || keyboard.VKey == VK_MENU || keyboard.VKey == VK_CONTROL){
+
+                switchLayout(0);
+            }
+            else{
+
+            }
+
         }
 }
 

@@ -60,6 +60,7 @@ private:
     bool _whiteList = false;
 
     short _toggleValue;
+    bool _externalShortcutPressed;
     bool _changeRegistry;
     bool _enableQt;
     bool _registryChanged = false;
